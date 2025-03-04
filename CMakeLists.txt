@@ -72,6 +72,8 @@ if(BUILD_TESTING)
     )
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    # Disable GMock as we don't use it
+    set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
     add_subdirectory(tests)
 endif()
