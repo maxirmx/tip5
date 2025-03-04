@@ -28,14 +28,6 @@
 
 namespace tip5xx {
 
-void Tip5::process(const std::string& input) {
-    result_ = std::string(input);
-}
-
-std::string Tip5::result() const {
-    return result_;
-}
-
 
 std::vector<uint8_t> Tip5::hash_pair(const std::vector<uint8_t>& left, const std::vector<uint8_t>& right) {
     // Initialize output vector with fixed size (as in Rust impl)

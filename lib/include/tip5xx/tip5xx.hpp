@@ -33,28 +33,22 @@
 namespace tip5xx {
 
 class Tip5 {
-public:
+private:
+    // Prevent instantiation, copying and moving as all methods are static
     Tip5() = default;
     ~Tip5() = default;
-
-    // Prevent copying and moving
     Tip5(const Tip5&) = delete;
     Tip5& operator=(const Tip5&) = delete;
     Tip5(Tip5&&) = delete;
     Tip5& operator=(Tip5&&) = delete;
 
-    // Core functionality
-    void process(const std::string& input);
-    std::string result() const;
-
+public:
     // Hash a pair of byte arrays
     static std::vector<uint8_t> hash_pair(const std::vector<uint8_t>& left, const std::vector<uint8_t>& right);
 
     // Hash a variable length sequence of byte arrays
     static std::vector<uint8_t> hash_varlen(const std::vector<std::vector<uint8_t>>& inputs);
 
-private:
-    std::string result_;
 };
 
 } // namespace tip5xx

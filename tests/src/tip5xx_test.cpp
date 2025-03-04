@@ -24,24 +24,8 @@
  *
  */
 
- #include <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include "tip5xx/tip5xx.hpp"
-#include <vector>
-
-class Tip5Test : public ::testing::Test {
-protected:
-    tip5xx::Tip5 tip5;
-};
-
-TEST_F(Tip5Test, ProcessesInputCorrectly) {
-    tip5.process("test input");
-    EXPECT_EQ(tip5.result(), "test input");
-}
-
-TEST_F(Tip5Test, HandlesEmptyInput) {
-    tip5.process("");
-    EXPECT_TRUE(tip5.result().empty());
-}
 
 // Helper function to create test vectors
 std::vector<uint8_t> make_test_vector(const std::initializer_list<uint8_t>& data) {
