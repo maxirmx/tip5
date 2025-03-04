@@ -3,7 +3,7 @@
 
 # tip5xx
 
-Tip5 implementation in C++
+Tip5 hash (https://eprint.iacr.org/2023/107) implementation in C++
 
 ## Requirements
 
