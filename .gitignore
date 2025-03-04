@@ -1,32 +1,33 @@
-# Prerequisites
-*.d
+# Build directories
+build/
+out/
+cmake-build-*/
 
-# Compiled Object files
-*.slo
-*.lo
+# IDE specific files
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Compiled files
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+*.exe
+*.dll
 *.so
 *.dylib
-*.dll
 
-# Fortran module files
-*.mod
-*.smod
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+*.cmake
+install_manifest.txt
+compile_commands.json
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# OS specific
+.DS_Store
+Thumbs.db
