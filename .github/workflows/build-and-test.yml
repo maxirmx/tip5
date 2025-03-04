@@ -68,6 +68,20 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest -C ${{ matrix.env.coverage && 'Debug' || 'Release' }} --output-on-failure
 
+    - name: Sample App Tests
+      working-directory: ${{github.workspace}}/build/samples
+      run: |
+        # Test pair mode with different formats
+        ./tip5xx_sample 0x1EADB75F 0xC7FEBAB9  # hexadecimal
+        ./tip5xx_sample 16909060 84281096  # decimal
+        ./tip5xx_sample 0100402404 0502060710  # octal
+
+        # Test varlen mode with mixed formats
+        ./tip5xx_sample -m varlen 0x1EADB75F 16909060 0502060710
+
+        # Test help
+        ./tip5xx_sample --help
+
     - name: Generate coverage report
       if: matrix.env.coverage
       working-directory: ${{github.workspace}}/build
@@ -83,5 +97,6 @@ jobs:
         verbose: true
         files: |
           ${{github.workspace}}/build/CMakeFiles/tip5xx.dir/src/*.gc*
+          ${{github.workspace}}/build/samples/CMakeFiles/tip5xx_sample.dir/src/*.gc*
           ${{github.workspace}}/lib/include/tip5xx/*.hpp
         directory: ${{github.workspace}}/build

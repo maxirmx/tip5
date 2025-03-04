@@ -42,9 +42,31 @@ auto result = processor.result();
 
 ### Sample Application
 
+The sample application supports both pair and variable-length hashing modes:
+
 ```bash
-./build/samples/tip5xx_sample "your input"
+# Pair mode with different number formats
+./build/samples/tip5xx_sample 0x1EADB75F 0xC7FEBAB9     # hexadecimal (0x prefix)
+./build/samples/tip5xx_sample 16909060 84281096         # decimal
+./build/samples/tip5xx_sample 0100402404 0502060710     # octal (0 prefix)
+
+# Variable-length mode with mixed formats
+./build/samples/tip5xx_sample -m varlen 0x1EADB75F 16909060 0502060710
+
+# Show help and options
+./build/samples/tip5xx_sample --help
 ```
+
+Options:
+- `-m, --mode <mode>`: Hashing mode ('pair' or 'varlen')
+  - `pair`: Takes exactly 2 numbers (default mode)
+  - `varlen`: Takes 2 or more numbers
+- Input values support multiple formats:
+  - Hexadecimal: Numbers with 0x prefix (e.g., 0x1EADB75F)
+  - Decimal: Plain numbers (e.g., 16909060)
+  - Octal: Numbers with leading 0 (e.g., 0100402404)
+
+Note: Hex format requires the 0x prefix and even number of digits.
 
 ## License
 
