@@ -29,6 +29,9 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <cassert>
+#include <cstring>
+#include <algorithm>
 
 namespace tip5xx {
 
