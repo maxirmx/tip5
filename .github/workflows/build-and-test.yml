@@ -27,43 +27,35 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+    group: '${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.ref_name }}'
+    cancel-in-progress: true
 
 jobs:
   build:
-    name: ${{ matrix.os }}-${{ matrix.compiler.name }}-${{ matrix.config }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.env.os }}-${{ matrix.env.compiler.name }} [${{ matrix.config }}]
+    runs-on: ${{ matrix.env.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        config: [Debug, Release]
-        compiler:
-          - {
-              name: "gcc",
-              cc: "gcc",
-              cxx: "g++"
-            }
-          - {
-              name: "clang",
-              cc: "clang",
-              cxx: "clang++"
-            }
-        exclude:
-          - os: windows-latest
-            compiler: {name: "gcc", cc: "gcc", cxx: "g++"}
-          - os: windows-latest
-            compiler: {name: "clang", cc: "clang", cxx: "clang++"}
+        config: [Release]
+        env:
+          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"} }
+          - { os: macos-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"} }
+          - { os: windows-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"} }
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
     - name: Configure CMake
-      env:
-        CC: ${{ matrix.compiler.cc }}
-        CXX: ${{ matrix.compiler.cxx }}
       run: >
         cmake -B ${{github.workspace}}/build
         -DCMAKE_BUILD_TYPE=${{matrix.config}}
+        -DCMAKE_C_COMPILER=${{ matrix.env.compiler.cc }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.env.compiler.cxx }}
         -DBUILD_TESTING=ON
 
     - name: Build
