@@ -25,19 +25,41 @@
  */
 
 #include <iostream>
-#include <string>
+#include <iomanip>
+#include <vector>
 #include "tip5xx/tip5xx.hpp"
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <input text>" << std::endl;
-        return 1;
+// Helper function to print hash result
+void print_hash(const std::vector<uint8_t>& hash) {
+    for (const auto& byte : hash) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
     }
+    std::cout << std::endl;
+}
 
+int main() {
     try {
-        tip5xx::Tip5 processor;
-        processor.process(argv[1]);
-        std::cout << "Result: " << processor.result() << std::endl;
+        // Example of hash_pair
+        std::vector<uint8_t> input1 = {1, 2, 3, 4};
+        std::vector<uint8_t> input2 = {5, 6, 7, 8};
+
+        std::cout << "Hash pair example:" << std::endl;
+        auto pair_result = tip5xx::Tip5::hash_pair(input1, input2);
+        std::cout << "hash_pair result: ";
+        print_hash(pair_result);
+
+        // Example of hash_varlen
+        std::vector<std::vector<uint8_t>> inputs = {
+            {1, 2, 3, 4},
+            {5, 6, 7, 8},
+            {9, 10, 11, 12}
+        };
+
+        std::cout << "\nHash varlen example:" << std::endl;
+        auto varlen_result = tip5xx::Tip5::hash_varlen(inputs);
+        std::cout << "hash_varlen result: ";
+        print_hash(varlen_result);
+
         return 0;
     }
     catch (const std::exception& e) {
