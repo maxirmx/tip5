@@ -1,4 +1,5 @@
 [![build-and-test](https://github.com/maxirmx/tip5/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/maxirmx/tip5/actions/workflows/build-and-test.yml)
+[![codecov](https://codecov.io/gh/maxirmx/tip5/graph/badge.svg?token=R7ie8bhkCG)](https://codecov.io/gh/maxirmx/tip5)
 
 # tip5xx
 
