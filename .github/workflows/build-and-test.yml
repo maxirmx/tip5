@@ -43,7 +43,7 @@ jobs:
         env:
           - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false }
           - { os: macos-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: false }
-          - { os: windows-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: false }
+          - { os: windows-latest, compiler: {name: "clang", cc: "clang-cl", cxx: "clang-cl"}, coverage: false, asan: false }
           - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: true, asan: false }
           - { os: ubuntu-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: true }
 
@@ -51,36 +51,69 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+#    - name: Install Clang (Windows)
+#      if: runner.os == 'Windows'
+#      uses: egor-tensin/setup-clang@v1
+#      with:
+#        version: latest
+#        platform: x64
+
     - name: Configure CMake
-      run: >
-        cmake -B ${{github.workspace}}/build
-        -DCMAKE_BUILD_TYPE=${{ matrix.env.coverage && 'Debug' || 'Release' }}
-        -DCMAKE_C_COMPILER=${{ matrix.env.compiler.cc }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.env.compiler.cxx }}
-        -DBUILD_TESTING=ON
-        -DENABLE_COVERAGE=${{ matrix.env.coverage }}
-        -DENABLE_SANITIZER=${{ matrix.env.asan }}
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          cmake -B build \
+          -G "Visual Studio 17 2022" \
+          -A x64 \
+          -T ClangCL \
+          -DCMAKE_BUILD_TYPE=${{ matrix.env.coverage && 'Debug' || 'Release' }} \
+          -DCMAKE_C_COMPILER=${{ matrix.env.compiler.cc }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.env.compiler.cxx }} \
+          -DBUILD_TESTING=ON \
+          -DENABLE_COVERAGE=${{ matrix.env.coverage }} \
+          -DENABLE_SANITIZER=${{ matrix.env.asan }}
+        else
+          cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{ matrix.env.coverage && 'Debug' || 'Release' }} \
+          -DCMAKE_C_COMPILER=${{ matrix.env.compiler.cc }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.env.compiler.cxx }} \
+          -DBUILD_TESTING=ON \
+          -DENABLE_COVERAGE=${{ matrix.env.coverage }} \
+          -DENABLE_SANITIZER=${{ matrix.env.asan }}
+        fi
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{ matrix.env.coverage && 'Debug' || 'Release' }}
+      run: cmake --build build --config ${{ matrix.env.coverage && 'Debug' || 'Release' }}
 
     - name: Test
-      working-directory: ${{github.workspace}}/build
+      working-directory: build
       run: ctest -C ${{ matrix.env.coverage && 'Debug' || 'Release' }} --output-on-failure
 
+    - name: Set build paths
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          echo "CONFIG=${{ matrix.env.coverage && 'Debug/' || 'Release/' }}" >> $GITHUB_ENV
+          echo "EXE=.exe" >> $GITHUB_ENV
+        else
+          echo "CONFIG=" >> $GITHUB_ENV
+          echo "EXE=" >> $GITHUB_ENV
+        fi
+
     - name: Sample App Tests
-      working-directory: ${{github.workspace}}/build/samples
+      working-directory: build/samples
+      shell: bash
       run: |
         # Test pair mode with different formats
-        ./tip5xx_sample 0x1EADB75F 0xC7FEBAB9  # hexadecimal
-        ./tip5xx_sample 16909060 84281096  # decimal
-        ./tip5xx_sample 0100402404 0502060710  # octal
+        ./${CONFIG}tip5xx_sample${EXE} 0x1EADB75F 0xC7FEBAB9  # hexadecimal
+        ./${CONFIG}tip5xx_sample${EXE} 16909060 84281096  # decimal
+        ./${CONFIG}tip5xx_sample${EXE} 0100402404 0502060710  # octal
 
         # Test varlen mode with mixed formats
-        ./tip5xx_sample -m varlen 0x1EADB75F 16909060 0502060710
+        ./${CONFIG}tip5xx_sample${EXE} -m varlen 0x1EADB75F 16909060 0502060710
 
         # Test help
-        ./tip5xx_sample --help
+        ./${CONFIG}tip5xx_sample${EXE} --help
 
     - name: Generate coverage report
       if: matrix.env.coverage
