@@ -32,6 +32,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_TESTING "Build tests" ON)
 option(BUILD_SAMPLES "Build samples" ON)
 option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
+option(ENABLE_SANITIZER "Enable Address Sanitizer" OFF)
+
+# Sanitizer
+if(ENABLE_SANITIZER)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address)
+    else()
+        message(FATAL_ERROR "Address Sanitizer requires GCC or Clang")
+    endif()
+endif()
 
 # Coverage
 if(ENABLE_COVERAGE)

@@ -35,16 +35,17 @@ concurrency:
 
 jobs:
   build:
-    name: ${{ matrix.env.os }}-${{ matrix.env.compiler.name }}  [ coverage ${{ matrix.env.coverage }} ]
+    name: ${{ matrix.env.os }}-${{ matrix.env.compiler.name }}  [ coverage ${{ matrix.env.coverage }} asan ${{ matrix.env.asan }} ]
     runs-on: ${{ matrix.env.os }}
     strategy:
       fail-fast: false
       matrix:
         env:
-          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false }
-          - { os: macos-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false }
-          - { os: windows-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false }
-          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: true }
+          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false }
+          - { os: macos-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: false }
+          - { os: windows-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: false }
+          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: true, asan: false }
+          - { os: ubuntu-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: true }
 
     steps:
     - name: Checkout
@@ -58,6 +59,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.env.compiler.cxx }}
         -DBUILD_TESTING=ON
         -DENABLE_COVERAGE=${{ matrix.env.coverage }}
+        -DENABLE_SANITIZER=${{ matrix.env.asan }}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{ matrix.env.coverage && 'Debug' || 'Release' }}
