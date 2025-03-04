@@ -1,3 +1,5 @@
+[![build-and-test](https://github.com/maxirmx/tip5/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/maxirmx/tip5/actions/workflows/build-and-test.yml)
+
 # tip5xx
 
 Tip5 implementation in C++
