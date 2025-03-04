@@ -1,0 +1,18 @@
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    project:
+      default:
+        target: 90%
+        threshold: 1%
+        paths:
+          - "lib/src/**/*"
+          - "lib/include/**/*"
+
+ignore:
+  - "tests/**/*"
+  - "_deps/**/*"
+  - "samples/**/*"
+  - "build/_deps/**/*"

@@ -31,6 +31,21 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Options
 option(BUILD_TESTING "Build tests" ON)
 option(BUILD_SAMPLES "Build samples" ON)
+option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
+
+# Coverage
+if(ENABLE_COVERAGE)
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(WARNING "Code coverage results with an optimized (non-Debug) build may be misleading")
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        add_compile_options(-O0 -g --coverage)
+        add_link_options(--coverage)
+    else()
+        message(FATAL_ERROR "Code coverage requires GCC or Clang")
+    endif()
+endif()
 
 # Library
 add_subdirectory(lib)
