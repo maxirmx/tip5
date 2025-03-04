@@ -27,7 +27,8 @@
 #pragma once
 
 #include <string>
-#include <string_view>
+#include <vector>
+#include <cstdint>
 
 namespace tip5xx {
 
@@ -43,8 +44,14 @@ public:
     Tip5& operator=(Tip5&&) = delete;
 
     // Core functionality
-    void process(std::string_view input);
+    void process(const std::string& input);
     std::string result() const;
+
+    // Hash a pair of byte arrays
+    static std::vector<uint8_t> hash_pair(const std::vector<uint8_t>& left, const std::vector<uint8_t>& right);
+
+    // Hash a variable length sequence of byte arrays
+    static std::vector<uint8_t> hash_varlen(const std::vector<std::vector<uint8_t>>& inputs);
 
 private:
     std::string result_;
