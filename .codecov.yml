@@ -7,6 +7,9 @@ coverage:
       default:
         target: 90%
         threshold: 1%
+        paths:
+          - "lib/src/**/*"
+          - "lib/include/**/*"
 
 ignore:
   - "tests/**/*"

@@ -79,5 +79,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true
         verbose: true
-        files: ${{github.workspace}}/build/CMakeFiles/tip5xx.dir/src/*.gcda,${{github.workspace}}/build/CMakeFiles/tip5xx.dir/src/*.gcno
+        files: |
+          ${{github.workspace}}/build/CMakeFiles/tip5xx.dir/src/*.gc*
+          ${{github.workspace}}/lib/include/tip5xx/*.hpp
         directory: ${{github.workspace}}/build
