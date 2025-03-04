@@ -51,13 +51,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-#    - name: Install Clang (Windows)
-#      if: runner.os == 'Windows'
-#      uses: egor-tensin/setup-clang@v1
-#      with:
-#        version: latest
-#        platform: x64
-
     - name: Configure CMake
       shell: bash
       run: |
