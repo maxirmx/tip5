@@ -41,12 +41,11 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false, rust: false }
+          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false, rust: true }
           - { os: macos-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: false, rust: false }
           - { os: windows-latest, compiler: {name: "clang", cc: "clang-cl", cxx: "clang-cl"}, coverage: false, asan: false, rust: false }
           - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: true, asan: false, rust: false }
           - { os: ubuntu-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: true, rust: false }
-          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false, rust: true }
 
     steps:
     - name: Checkout
