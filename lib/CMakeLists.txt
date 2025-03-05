@@ -22,6 +22,7 @@
 
 add_library(tip5xx
     src/tip5xx.cpp
+    src/b_field_element.cpp
 )
 
 set_target_properties(tip5xx PROPERTIES

@@ -58,6 +58,44 @@ if(ENABLE_COVERAGE)
     endif()
 endif()
 
+if(MSVC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Find clang installation directory
+    execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} --print-resource-dir
+        OUTPUT_VARIABLE CLANG_RESOURCE_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    # Construct the path to the builtins library for x86_64
+    if(CLANG_RESOURCE_DIR)
+        set(BUILTINS_LIB "${CLANG_RESOURCE_DIR}/lib/windows/clang_rt.builtins-x86_64.lib")
+        message(STATUS "Using compiler-rt builtins library: ${BUILTINS_LIB}")
+
+        # Check if the file exists
+        if(EXISTS "${BUILTINS_LIB}")
+            link_libraries("${BUILTINS_LIB}")
+        else()
+            message(WARNING "Could not find compiler-rt builtins library at ${BUILTINS_LIB}")
+
+            # Fallback to looking in the lib/clang directory
+            file(GLOB CLANG_VERSION_DIRS "${CLANG_RESOURCE_DIR}/lib/clang/*")
+            if(CLANG_VERSION_DIRS)
+                list(GET CLANG_VERSION_DIRS 0 CLANG_VERSION_DIR)
+                set(FALLBACK_LIB "${CLANG_VERSION_DIR}/lib/windows/clang_rt.builtins-x86_64.lib")
+
+                if(EXISTS "${FALLBACK_LIB}")
+                    message(STATUS "Found fallback builtins library at ${FALLBACK_LIB}")
+                    link_libraries("${FALLBACK_LIB}")
+                else()
+                    message(FATAL_ERROR "Could not find compiler-rt builtins library")
+                endif()
+            endif()
+        endif()
+    else()
+        message(FATAL_ERROR "Could not determine Clang resource directory")
+    endif()
+endif()
+
 # Library
 add_subdirectory(lib)
 
