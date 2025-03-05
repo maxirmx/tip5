@@ -35,17 +35,18 @@ concurrency:
 
 jobs:
   build:
-    name: ${{ matrix.env.os }}-${{ matrix.env.compiler.name }}  [ coverage ${{ matrix.env.coverage }} asan ${{ matrix.env.asan }} ]
+    name: ${{ matrix.env.os }}-${{ matrix.env.compiler.name }}  [ coverage ${{ matrix.env.coverage }} asan ${{ matrix.env.asan }} rust ${{ matrix.env.rust }} ]
     runs-on: ${{ matrix.env.os }}
     strategy:
       fail-fast: false
       matrix:
         env:
-          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false }
-          - { os: macos-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: false }
-          - { os: windows-latest, compiler: {name: "clang", cc: "clang-cl", cxx: "clang-cl"}, coverage: false, asan: false }
-          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: true, asan: false }
-          - { os: ubuntu-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: true }
+          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false, rust: false }
+          - { os: macos-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: false, rust: false }
+          - { os: windows-latest, compiler: {name: "clang", cc: "clang-cl", cxx: "clang-cl"}, coverage: false, asan: false, rust: false }
+          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: true, asan: false, rust: false }
+          - { os: ubuntu-latest, compiler: {name: "clang", cc: "clang", cxx: "clang++"}, coverage: false, asan: true, rust: false }
+          - { os: ubuntu-latest, compiler: {name: "gcc", cc: "gcc", cxx: "g++"}, coverage: false, asan: false, rust: true }
 
     steps:
     - name: Checkout
@@ -94,7 +95,7 @@ jobs:
         fi
 
     - name: Sample App Tests
-      working-directory: build/samples
+      working-directory: build/samples/tip5-cpp
       shell: bash
       run: |
         # Test pair mode with different formats
@@ -107,6 +108,31 @@ jobs:
 
         # Test help
         ./${CONFIG}tip5xx_sample${EXE} --help
+
+    - name: Setup Rust
+      if: matrix.env.rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: '1.85'
+        override: true
+
+    - name: Build and Test Rust Sample
+      if: matrix.env.rust
+      working-directory: samples/tip5-rust
+      run: |
+        cargo build
+
+        # Test pair mode with different formats
+        cargo run -- 0x1EADB75F 0xC7FEBAB9
+        cargo run -- 16909060 84281096
+        cargo run -- 0100402404 0502060710
+
+        # Test varlen mode with mixed formats
+        cargo run -- -m varlen 0x1EADB75F 16909060 0502060710
+
+        # Test help
+        cargo run -- --help
 
     - name: Generate coverage report
       if: matrix.env.coverage
@@ -123,6 +149,6 @@ jobs:
         verbose: true
         files: |
           ${{github.workspace}}/build/CMakeFiles/tip5xx.dir/src/*.gc*
-          ${{github.workspace}}/build/samples/CMakeFiles/tip5xx_sample.dir/src/*.gc*
+          ${{github.workspace}}/build/samples/tip5-cpp/CMakeFiles/tip5xx_sample.dir/src/*.gc*
           ${{github.workspace}}/lib/include/tip5xx/*.hpp
         directory: ${{github.workspace}}/build
