@@ -1,0 +1,11 @@
+[package]
+name = "tip5-rust"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+
+[dependencies]
+twenty-first = { git = "https://github.com/Neptune-Crypto/twenty-first.git" }
+clap = { version = "4.5.1", features = ["derive"] }
+hex = "0.4.3"
+num-traits = "0.2"
