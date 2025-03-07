@@ -21,8 +21,11 @@
 # This file is a part of tip5xx library
 
 add_library(tip5xx
-    src/tip5xx.cpp
-    src/b_field_element.cpp
+    "include/tip5xx/b_field_element.hpp"
+    "include/tip5xx/tip5xx.hpp"
+    "include/tip5xx/traits.hpp"
+    "src/tip5xx.cpp"
+    "src/b_field_element.cpp"
 )
 
 set_target_properties(tip5xx PROPERTIES

@@ -35,7 +35,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
+#include "traits.hpp"
 
 namespace tip5xx {
 
@@ -47,8 +47,17 @@ class XFieldElement;  // Forward declaration
  * In Montgomery representation. This implementation follows
  * https://eprint.iacr.org/2022/274.pdf
  */
-class BFieldElement {
+class BFieldElement : public FiniteField<BFieldElement> {
 public:
+    using FiniteField<BFieldElement>::inverse;
+    using FiniteField<BFieldElement>::inverse_or_zero;
+    using FiniteField<BFieldElement>::batch_inversion;
+    using FiniteField<BFieldElement>::cyclic_group_elements;
+    using FiniteField<BFieldElement>::primitive_root_of_unity;
+    using FiniteField<BFieldElement>::mod_pow_u64;
+    using FiniteField<BFieldElement>::mod_pow_u32;
+    using FiniteField<BFieldElement>::square;
+
     static constexpr size_t BYTES = 8;
 
     // The base field's prime, i.e., 2^64 - 2^32 + 1
@@ -81,9 +90,8 @@ public:
         return canonical_representation();
     }
 
-    // Multiplicative inverse
-    BFieldElement inverse() const;
-    BFieldElement inverse_or_zero() const;
+    // Implementation of Inverse trait
+    BFieldElement inverse_impl() const;
 
     // Power accumulator function
     template<size_t N, size_t M>
@@ -116,6 +124,22 @@ public:
     static BFieldElement generator() {
         return new_element(7UL);
     }
+
+    // Implementation of PrimitiveRootOfUnity trait
+    static BFieldElement primitive_root_of_unity_impl(uint64_t n);
+
+    // Implementation of ModPowU64 trait
+    BFieldElement mod_pow_u64_impl(uint64_t exp) const;
+
+    // Implementation of ModPowU32 trait
+    BFieldElement mod_pow_u32_impl(uint32_t exp) const;
+
+    // Implementation of CyclicGroupGenerator trait
+    std::vector<BFieldElement> cyclic_group_elements_impl(size_t max = 0) const;
+
+    // Static methods required by FiniteField
+    static BFieldElement zero() { return ZERO; }
+    static BFieldElement one() { return ONE; }
 
     // Lift to XFieldElement
     XFieldElement lift() const;
@@ -216,11 +240,6 @@ public:
         return x < P;
     }
 
-    // Square the value
-    BFieldElement square() const {
-        return *this * *this;
-    }
-
     // Is zero or one checks
     bool is_zero() const {
         return *this == ZERO;
@@ -229,15 +248,6 @@ public:
     bool is_one() const {
         return *this == ONE;
     }
-
-    // Batch inversion of multiple elements
-    static std::vector<BFieldElement> batch_inversion(const std::vector<BFieldElement>& elements);
-
-    // Primitive root of unity - throws std::runtime_error if root does not exist
-    static BFieldElement primitive_root_of_unity(uint64_t n);
-
-    // Get cyclic group elements
-    std::vector<BFieldElement> cyclic_group_elements(size_t max = 0) const;
 
     // Arithmetic operators
     BFieldElement operator+(const BFieldElement& rhs) const;
@@ -359,7 +369,6 @@ private:
         return montyred(static_cast<__uint128_t>(value_));
     }
 
-
     // Internal exponentiation helper
     static BFieldElement exp(BFieldElement base, uint64_t exponent);
 
@@ -403,7 +412,6 @@ static BFieldElement bfe_from(T value) {
 
 static BFieldElement bfe_from(__uint128_t value) {
     return BFieldElement::new_element(BFieldElement::mod_reduce(value)); }
-
 
 // Constructor for int64_t values
 static BFieldElement bfe_from(int64_t value) {

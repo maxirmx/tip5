@@ -434,7 +434,8 @@ TEST(BFieldElementTest, MulDivPlusMinusNeg) {
         EXPECT_EQ(a, a_o_b * b);
         EXPECT_EQ(b, b_o_a * a);
         EXPECT_TRUE((a_o_b * b_o_a).is_one());
-        EXPECT_EQ(a * a, a.square());
+        BFieldElement square_result = a * a;
+        EXPECT_EQ(a.square(), square_result);
 
         EXPECT_EQ(a - b + b, a);
         EXPECT_EQ(b - a + a, b);
@@ -691,6 +692,7 @@ TEST(BFieldElementTest, FixedModPow) {
     BFieldElement expected = BFieldElement::new_element(2288673415394035783);
 
     EXPECT_EQ(base.mod_pow_u64(exponent), expected);
+    EXPECT_EQ(base.mod_pow_u64_impl(exponent), expected);
 }
 
 // Test fixed_mul
@@ -894,10 +896,10 @@ TEST(BFieldElementTest, ModPowU32) {
     BFieldElement five = BFieldElement::new_element(5);
 
     // Test exponentiation with small values
-    EXPECT_EQ(BFieldElement::ONE, two.mod_pow_u32(0));
+    EXPECT_EQ(BFieldElement::ONE, two.mod_pow_u32_impl(0));
     EXPECT_EQ(two, two.mod_pow_u32(1));
     EXPECT_EQ(BFieldElement::new_element(32), two.mod_pow_u32(5));
-    EXPECT_EQ(BFieldElement::new_element(1024), two.mod_pow_u32(10));
+    EXPECT_EQ(BFieldElement::new_element(1024), two.mod_pow_u32_impl(10));
     EXPECT_EQ(BFieldElement::new_element(3125), five.mod_pow_u32(5));
 
     // Test Fermat's Little Theorem: a^(p-1) ≡ 1 (mod p) for any a ≠ 0

@@ -75,43 +75,31 @@ BFieldElement BFieldElement::try_new(uint64_t v) {
     return new_element(v);
 }
 
-// Multiplicative inverse
-BFieldElement BFieldElement::inverse() const {
-    if (*this == ZERO) {
-        throw std::runtime_error("Attempted to find the multiplicative inverse of zero.");
+// Implementation of Inverse trait
+BFieldElement BFieldElement::inverse_impl() const {
+    if (is_zero()) {
+        throw std::runtime_error("Cannot compute multiplicative inverse of zero");
     }
-
     const BFieldElement& x = *this;
 
-    BFieldElement bin_2_ones = x.square() * x;
-    BFieldElement bin_3_ones = bin_2_ones.square() * x;
+    BFieldElement bin_2_ones = (*this) * (*this) * x;
+    BFieldElement bin_3_ones = (bin_2_ones * bin_2_ones) * x;
     BFieldElement bin_6_ones = exp(bin_3_ones, 3) * bin_3_ones;
     BFieldElement bin_12_ones = exp(bin_6_ones, 6) * bin_6_ones;
     BFieldElement bin_24_ones = exp(bin_12_ones, 12) * bin_12_ones;
     BFieldElement bin_30_ones = exp(bin_24_ones, 6) * bin_6_ones;
-    BFieldElement bin_31_ones = bin_30_ones.square() * x;
-    BFieldElement bin_31_ones_1_zero = bin_31_ones.square();
-    BFieldElement bin_32_ones = bin_31_ones.square() * x;
+    BFieldElement bin_31_ones = (bin_30_ones * bin_30_ones) * x;
+    BFieldElement bin_31_ones_1_zero = bin_31_ones * bin_31_ones;
+    BFieldElement bin_32_ones = (bin_31_ones * bin_31_ones) * x;
 
     return exp(bin_31_ones_1_zero, 32) * bin_32_ones;
-}
-
-// Safe inverse that returns zero for zero input
-BFieldElement BFieldElement::inverse_or_zero() const {
-    if (is_zero()) {
-        return ZERO;
-    }
-    return inverse();
 }
 
 // Internal exponentiation helper
 BFieldElement BFieldElement::exp(BFieldElement base, uint64_t exponent) {
     BFieldElement res = base;
     for (uint64_t i = 0; i < exponent; i++) {
-        res = BFieldElement(montyred(
-            static_cast<__uint128_t>(res.value_) *
-            static_cast<__uint128_t>(res.value_)
-        ));
+        res = res * res;
     }
     return res;
 }
@@ -129,16 +117,10 @@ BFieldElement BFieldElement::mod_pow(uint64_t exp) const {
     }
 
     for (int i = 0; i < bit_length; i++) {
-        acc = BFieldElement(montyred(
-            static_cast<__uint128_t>(acc.value_) *
-            static_cast<__uint128_t>(acc.value_)
-        ));
+        acc = acc * acc;
 
         if (exp & (1ULL << (bit_length - 1 - i))) {
-            acc = BFieldElement(montyred(
-                static_cast<__uint128_t>(acc.value_) *
-                static_cast<__uint128_t>(value_)
-            ));
+            acc = acc * (*this);
         }
     }
 
@@ -199,38 +181,8 @@ BFieldElement BFieldElement::from_raw_u16s(const std::array<uint16_t, 4>& chunks
     return try_new(result);
 }
 
-// Batch inversion of multiple elements
-std::vector<BFieldElement> BFieldElement::batch_inversion(
-    const std::vector<BFieldElement>& elements) {
-
-    if (elements.empty()) {
-        return {};
-    }
-
-    std::vector<BFieldElement> result(elements.size());
-    std::vector<BFieldElement> products(elements.size());
-
-    // Compute products
-    products[0] = elements[0];
-    for (size_t i = 1; i < elements.size(); i++) {
-        products[i] = products[i - 1] * elements[i];
-    }
-
-    // Invert the final product
-    BFieldElement inv = products.back().inverse();
-
-    // Work backwards to calculate individual inverses
-    for (size_t i = elements.size() - 1; i > 0; i--) {
-        result[i] = inv * products[i - 1];
-        inv = inv * elements[i];
-    }
-
-    result[0] = inv;
-    return result;
-}
-
-// Primitive root of unity
-BFieldElement BFieldElement::primitive_root_of_unity(uint64_t n) {
+// Implementation of PrimitiveRootOfUnity trait
+BFieldElement BFieldElement::primitive_root_of_unity_impl(uint64_t n) {
     auto it = PRIMITIVE_ROOTS.find(n);
     if (it == PRIMITIVE_ROOTS.end()) {
         throw std::runtime_error("No primitive root of unity exists for this order.");
@@ -238,8 +190,18 @@ BFieldElement BFieldElement::primitive_root_of_unity(uint64_t n) {
     return new_element(it->second);
 }
 
-// Get cyclic group elements
-std::vector<BFieldElement> BFieldElement::cyclic_group_elements(size_t max) const {
+// Implementation of ModPowU64 trait
+BFieldElement BFieldElement::mod_pow_u64_impl(uint64_t exp) const {
+    return mod_pow(exp);
+}
+
+// Implementation of ModPowU32 trait
+BFieldElement BFieldElement::mod_pow_u32_impl(uint32_t exp) const {
+    return mod_pow(static_cast<uint64_t>(exp));
+}
+
+// Implementation of CyclicGroupGenerator trait
+std::vector<BFieldElement> BFieldElement::cyclic_group_elements_impl(size_t max) const {
     // Special case for zero
     if (is_zero()) {
         return {ZERO};
@@ -302,7 +264,7 @@ BFieldElement& BFieldElement::operator*=(const BFieldElement& rhs) {
 
 // Division operator
 BFieldElement BFieldElement::operator/(const BFieldElement& rhs) const {
-    return *this * rhs.inverse();
+    return *this * rhs.inverse_impl();
 }
 
 // Negation operator
