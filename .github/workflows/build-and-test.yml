@@ -110,11 +110,9 @@ jobs:
 
     - name: Setup Rust
       if: matrix.env.rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        profile: minimal
-        toolchain: '1.85'
-        override: true
+        toolchain: 1.85.0
 
     - name: Build and Test Rust Sample
       if: matrix.env.rust
