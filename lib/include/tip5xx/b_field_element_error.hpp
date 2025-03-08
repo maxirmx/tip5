@@ -92,7 +92,7 @@ public:
     TryFromU32sError() : BFieldElementError("U32s<N>: `N` not big enough to hold the value") {}
 };
 
-/*
+
 // TryFromXFieldElementError
 class TryFromXFieldElementError : public BFieldElementError {
 public:
@@ -150,5 +150,5 @@ private:
 
     static std::string build_message(ErrorType type, const std::string& detail);
 };
-*/
+
 } // namespace tip5xx

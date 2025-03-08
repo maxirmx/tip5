@@ -64,7 +64,7 @@ public:
 
     // The base field's prime, i.e., 2^64 - 2^32 + 1
     static constexpr uint64_t P = 0xFFFFFFFF00000001ULL;
-    static constexpr uint64_t MAX = P - 1;
+    static constexpr uint64_t MAX_VALUE = BFieldElement::P-1;
 
     // 2^128 mod P; used for conversion of elements into Montgomery representation
     static constexpr uint64_t R2 = 0xFFFFFFFE00000001ULL;
@@ -75,6 +75,7 @@ public:
     // Constants
     static const BFieldElement ZERO;
     static const BFieldElement ONE;
+    static const BFieldElement MAX;
 
     // Constructors
     BFieldElement() : value_(0) {}

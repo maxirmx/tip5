@@ -21,6 +21,7 @@
 // This file is a part of tip5xx library
 
 #include "tip5xx/b_field_element.hpp"
+#include "tip5xx/x_field_element.hpp"
 
 namespace tip5xx {
 
@@ -28,6 +29,7 @@ namespace tip5xx {
 const BFieldElement BFieldElement::ZERO = BFieldElement::new_element(0UL);
 const BFieldElement BFieldElement::ONE = BFieldElement::new_element(1UL);
 const BFieldElement BFieldElement::MINUS_TWO_INVERSE = BFieldElement::new_element(0x7FFFFFFF80000000);
+const BFieldElement BFieldElement::MAX = BFieldElement::new_element(P - 1);
 
 // Primitive roots lookup table
 const std::unordered_map<uint64_t, uint64_t> BFieldElement::PRIMITIVE_ROOTS = {
@@ -435,8 +437,8 @@ std::string BFieldElement::to_string() const {
 }
 
 // Implement XFieldElement lift
-//XFieldElement BFieldElement::lift() const {
-//    return XFieldElement::new_const(*this);
-//}
+XFieldElement BFieldElement::lift() const {
+    return XFieldElement::new_const(*this);
+}
 
 } // namespace tip5xx
