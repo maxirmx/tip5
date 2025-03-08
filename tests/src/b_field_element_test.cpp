@@ -84,8 +84,9 @@ TEST(BFieldElementTest, ByteArrayOutsideRangeIsNotAccepted) {
         try {
             [[maybe_unused]] BFieldElement bfe = BFieldElement::from_raw_bytes(byte_array);
             FAIL() << "Should have rejected value outside range";
-        } catch (const std::runtime_error&) {
+        } catch (const ParseBFieldElementError& e) {
             // Expected behavior
+            EXPECT_EQ(e.type(), ParseBFieldElementError::ErrorType::NotCanonical);
             SUCCEED();
         }
     }
@@ -373,7 +374,7 @@ TEST(BFieldElementTest, MultiplicativeInverseOfZero) {
     BFieldElement zero = BFieldElement::ZERO;
 
     // Should throw an exception
-    EXPECT_THROW(zero.inverse(), std::runtime_error);
+    EXPECT_THROW(zero.inverse(), BFieldElementInverseError);
 }
 
 // Supposed generator is generator test (converted from test)
@@ -581,7 +582,7 @@ TEST(BFieldElementTest, U32Conversion) {
 
     for (uint64_t i = 1; i < 100; i++) {
         BFieldElement invalid_val = BFieldElement::new_element(static_cast<uint64_t>(UINT32_MAX) + i);
-        EXPECT_THROW((void)static_cast<uint32_t>(invalid_val), std::overflow_error);
+        EXPECT_THROW((void)static_cast<uint32_t>(invalid_val), BFieldElementStringConversionError);
     }
 }
 
@@ -965,7 +966,7 @@ TEST(BFieldElementTest, PrimitiveRootOfUnity) {
     };
 
     for (uint64_t power : invalid_powers) {
-        EXPECT_THROW( (void)BFieldElement::primitive_root_of_unity(power), std::runtime_error) << "Expected exception for n = " << power;
+        EXPECT_THROW( (void)BFieldElement::primitive_root_of_unity(power), BFieldElementPrimitiveRootError) << "Expected exception for n = " << power;
     }
 }
 
@@ -1102,23 +1103,23 @@ TEST(BFieldElementTest, BfeFromString) {
     // Test whitespace handling
     EXPECT_EQ(bfe_from_string(" 42"), BFieldElement::new_element(42));
     EXPECT_EQ(bfe_from_string("42 "), BFieldElement::new_element(42));
-    EXPECT_THROW((void)bfe_from_string(" "), std::invalid_argument);
+    EXPECT_THROW((void)bfe_from_string(" "), BFieldElementStringConversionError);
 
     // Test invalid inputs
-    EXPECT_THROW((void)bfe_from_string(""), std::invalid_argument);
-    EXPECT_THROW((void)bfe_from_string("abc"), std::invalid_argument);
-    EXPECT_THROW((void)bfe_from_string("123abc"), std::invalid_argument);
-    EXPECT_THROW((void)bfe_from_string("42.5"), std::invalid_argument);
+    EXPECT_THROW((void)bfe_from_string(""), BFieldElementStringConversionError);
+    EXPECT_THROW((void)bfe_from_string("abc"), BFieldElementStringConversionError);
+    EXPECT_THROW((void)bfe_from_string("123abc"), BFieldElementStringConversionError);
+    EXPECT_THROW((void)bfe_from_string("42.5"), BFieldElementStringConversionError);
 
     // Test values exceeding field modulus
-    EXPECT_THROW((void)bfe_from_string("18446744069414584321"), std::invalid_argument);
+    EXPECT_THROW((void)bfe_from_string("18446744069414584321"), BFieldElementStringConversionError);
 
     // Test extremely negative values
-    EXPECT_THROW((void)bfe_from_string("-18446744069414584322"), std::invalid_argument);
+    EXPECT_THROW((void)bfe_from_string("-18446744069414584322"), BFieldElementStringConversionError);
 
     // Test large values triggering overflow check
     const std::string large_value(40, '9');  // String with 40 9's, exceeds 2^126
-    EXPECT_THROW((void)bfe_from_string(large_value), std::overflow_error);
+    EXPECT_THROW((void)bfe_from_string(large_value), BFieldElementStringConversionError);
 }
 
 TEST(BFieldElementTest, BfeFromHexString) {
@@ -1149,22 +1150,22 @@ TEST(BFieldElementTest, BfeFromHexString) {
               bfe_from_hex_string("0xFFFFFFFF00000002"));
 
     // Test invalid inputs
-    EXPECT_THROW((void)bfe_from_hex_string(""), std::invalid_argument);
-    EXPECT_THROW((void)bfe_from_hex_string("0x"), std::invalid_argument);
-    EXPECT_THROW((void)bfe_from_hex_string("0xG"), std::invalid_argument);
-    EXPECT_THROW((void)bfe_from_hex_string("0x12ZZ"), std::invalid_argument);
+    EXPECT_THROW((void)bfe_from_hex_string(""), BFieldElementStringConversionError);
+    EXPECT_THROW((void)bfe_from_hex_string("0x"), BFieldElementStringConversionError);
+    EXPECT_THROW((void)bfe_from_hex_string("0xG"), BFieldElementStringConversionError);
+    EXPECT_THROW((void)bfe_from_hex_string("0x12ZZ"), BFieldElementStringConversionError);
 
     // Test large values exceeding 127 bits
     // This is 128 bits of all 1s, should overflow
     const std::string large_hex = "0x" + std::string(32, 'F');
-    EXPECT_THROW((void)bfe_from_hex_string(large_hex), std::overflow_error);
+    EXPECT_THROW((void)bfe_from_hex_string(large_hex), BFieldElementStringConversionError);
 
     // Test edge cases for overflow detection
     std::string almost_overflow = "0x7" + std::string(31, 'F');  // 127 bits of 1, should be ok
     EXPECT_NO_THROW((void)bfe_from_hex_string(almost_overflow));
 
     std::string exact_overflow = "0x8" + std::string(31, '0');  // 1 in 128th bit position, should overflow
-    EXPECT_THROW((void)bfe_from_hex_string(exact_overflow), std::overflow_error);
+    EXPECT_THROW((void)bfe_from_hex_string(exact_overflow), BFieldElementStringConversionError);
 }
 
 // Test stream input operator for BFieldElement
@@ -1206,7 +1207,7 @@ TEST(BFieldElementTest, StreamInputOperator) {
     {
         std::stringstream ss("abc");
         BFieldElement bfe;
-        EXPECT_THROW(ss >> bfe, std::invalid_argument);
+        EXPECT_THROW(ss >> bfe, BFieldElementStringConversionError);
     }
 }
 
@@ -1275,7 +1276,7 @@ TEST(BFieldElementTest, StringParsingUint64Overflow) {
 
     // Test boundary for positive values
     std::string max_allowed = "18446744069414584321";  // P, should fail as too large
-    EXPECT_THROW((void)bfe_from_string(max_allowed), std::invalid_argument);
+    EXPECT_THROW((void)bfe_from_string(max_allowed), BFieldElementStringConversionError);
 
     std::string almost_max = "18446744069414584320";  // P-1, should be fine
     EXPECT_NO_THROW((void)bfe_from_string(almost_max));
@@ -1287,7 +1288,7 @@ TEST(BFieldElementTest, ToTemplateExceptions) {
     {
         // Create a value just above uint8_t::max
         BFieldElement too_large = BFieldElement::new_element(256);
-        EXPECT_THROW((void)too_large.to<uint8_t>(), std::overflow_error);
+        EXPECT_THROW((void)too_large.to<uint8_t>(), BFieldElementStringConversionError);
 
         // Test at exact boundary
         BFieldElement at_max = BFieldElement::new_element(255);
@@ -1299,7 +1300,7 @@ TEST(BFieldElementTest, ToTemplateExceptions) {
     {
         // Create a value just above int8_t::max
         BFieldElement too_large = BFieldElement::new_element(128);
-        EXPECT_THROW((void)too_large.to<int8_t>(), std::overflow_error);
+        EXPECT_THROW((void)too_large.to<int8_t>(), BFieldElementStringConversionError);
 
         // Test at exact boundary
         BFieldElement at_max = BFieldElement::new_element(127);
@@ -1311,7 +1312,7 @@ TEST(BFieldElementTest, ToTemplateExceptions) {
     {
         // Create a value representing -129 (too negative for int8_t)
         BFieldElement too_negative = BFieldElement::new_element(BFieldElement::P - 129);
-        EXPECT_THROW(too_negative.to<int8_t>(), std::underflow_error);
+        EXPECT_THROW(too_negative.to<int8_t>(), BFieldElementStringConversionError);
 
         // Test at exact boundary
         BFieldElement at_min = BFieldElement::new_element(BFieldElement::P - 128);
@@ -1323,7 +1324,7 @@ TEST(BFieldElementTest, ToTemplateExceptions) {
     {
         // Value in middle of field, doesn't cleanly represent a small signed int
         BFieldElement middle = BFieldElement::new_element(BFieldElement::P / 2);
-        EXPECT_THROW((void)middle.to<int32_t>(), std::overflow_error);
+        EXPECT_THROW((void)middle.to<int32_t>(), BFieldElementStringConversionError);
 
         // Should still convert to uint64_t though
         EXPECT_NO_THROW((void)middle.to<uint64_t>());
@@ -1337,7 +1338,7 @@ TEST(BFieldElementTest, ToTemplateExceptions) {
         EXPECT_EQ(65535, uint16_max.to<uint16_t>());
 
         BFieldElement uint16_overflow = BFieldElement::new_element(65536);
-        EXPECT_THROW((void)uint16_overflow.to<uint16_t>(), std::overflow_error);
+        EXPECT_THROW((void)uint16_overflow.to<uint16_t>(), BFieldElementStringConversionError);
 
         // Test exact boundaries for int16_t
         BFieldElement int16_max = BFieldElement::new_element(32767);
@@ -1349,10 +1350,10 @@ TEST(BFieldElementTest, ToTemplateExceptions) {
         EXPECT_EQ(-32768, int16_min.to<int16_t>());
 
         BFieldElement int16_overflow = BFieldElement::new_element(32768);
-        EXPECT_THROW((void)int16_overflow.to<int16_t>(), std::overflow_error);
+        EXPECT_THROW((void)int16_overflow.to<int16_t>(), BFieldElementStringConversionError);
 
         BFieldElement int16_underflow = BFieldElement::new_element(BFieldElement::P - 32769);
-        EXPECT_THROW((void)int16_underflow.to<int16_t>(), std::underflow_error);
+        EXPECT_THROW((void)int16_underflow.to<int16_t>(), BFieldElementStringConversionError);
     }
 }
 

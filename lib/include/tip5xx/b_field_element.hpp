@@ -31,15 +31,17 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include "traits.hpp"
 
+#include "b_field_element_error.hpp"
+
 namespace tip5xx {
 
-class XFieldElement;  // Forward declaration
+// Forward declarations
+class XFieldElement;
 
 /**
  * Base field element ∈ ℤ_{2^64 - 2^32 + 1}.
@@ -281,7 +283,7 @@ public:
         uint64_t val = canonical_representation();
         if constexpr (std::is_unsigned_v<T>) {
             if (val > std::numeric_limits<T>::max()) {
-                throw std::overflow_error("BFieldElement value too large for target type.");
+                throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::Overflow, "value too large for target type");
             }
             return static_cast<T>(val);
         }
@@ -289,13 +291,13 @@ public:
             if (val > P / 2) {  // This is a negative value in the field
                 int64_t signed_val = static_cast<int64_t>(val) - static_cast<int64_t>(P);
                 if (signed_val < std::numeric_limits<T>::min()) {
-                    throw std::underflow_error("BFieldElement value too small for target type.");
+                    throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::Overflow, "value too small for target type");
                 }
                 return static_cast<T>(signed_val);
             }
             else {  // This is a positive value
                 if (val > std::numeric_limits<T>::max()) {
-                    throw std::overflow_error("BFieldElement value too large for target type.");
+                    throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::Overflow, "value too large for target type");
                 }
                 return static_cast<T>(val);
             }
@@ -436,7 +438,7 @@ bool try_bfe_to(const BFieldElement& bfe, T& output) {
     try {
         output = bfe.to<T>();
         return true;
-    } catch (const std::exception&) {
+    } catch (const BFieldElementError&) {
         return false;
     }
 }

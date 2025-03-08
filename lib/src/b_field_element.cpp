@@ -70,7 +70,7 @@ const std::unordered_map<uint64_t, uint64_t> BFieldElement::PRIMITIVE_ROOTS = {
 // Try to create new field element if value is canonical
 BFieldElement BFieldElement::try_new(uint64_t v) {
     if (!is_canonical(v)) {
-        throw std::runtime_error("Value not in canonical range.");
+        throw ParseBFieldElementError(ParseBFieldElementError::ErrorType::NotCanonical);
     }
     return new_element(v);
 }
@@ -78,7 +78,7 @@ BFieldElement BFieldElement::try_new(uint64_t v) {
 // Implementation of Inverse trait
 BFieldElement BFieldElement::inverse_impl() const {
     if (is_zero()) {
-        throw std::runtime_error("Cannot compute multiplicative inverse of zero");
+        throw BFieldElementInverseError();
     }
     const BFieldElement& x = *this;
 
@@ -185,7 +185,7 @@ BFieldElement BFieldElement::from_raw_u16s(const std::array<uint16_t, 4>& chunks
 BFieldElement BFieldElement::primitive_root_of_unity_impl(uint64_t n) {
     auto it = PRIMITIVE_ROOTS.find(n);
     if (it == PRIMITIVE_ROOTS.end()) {
-        throw std::runtime_error("No primitive root of unity exists for this order.");
+        throw BFieldElementPrimitiveRootError();
     }
     return new_element(it->second);
 }
@@ -299,7 +299,7 @@ BFieldElement bfe_from_string(const std::string& s) {
 
     // Check if empty
     if (str.empty()) {
-        throw std::invalid_argument("Empty string.");
+        throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::Empty);
     }
 
     // Handle hex format with prefix
@@ -320,14 +320,14 @@ BFieldElement bfe_from_string(const std::string& s) {
     __int128_t parsed = 0;
     for (char c : str) {
         if (!std::isdigit(c)) {
-            throw std::invalid_argument("Invalid digit in string.");
+            throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::InvalidDigit);
         }
 
         parsed = parsed * 10 + (c - '0');
 
         // Check for overflow
         if (parsed & ((__int128_t)1 << 126)) {
-            throw std::overflow_error("Value too large.");
+            throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::Overflow);
         }
     }
 
@@ -340,11 +340,11 @@ BFieldElement bfe_from_string(const std::string& s) {
     __int128_t normalized;
 
     if (parsed <= -p) {
-        throw std::invalid_argument("Value out of canonical range (too negative).");
+        throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::OutOfRange, "too negative");
     } else if (parsed < 0) {
         normalized = parsed + p;
     } else if (parsed >= p) {
-        throw std::invalid_argument("Value out of canonical range (too large).");
+        throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::OutOfRange, "too large");
     } else {
         normalized = parsed;
     }
@@ -377,7 +377,7 @@ BFieldElement bfe_from_hex_string(const std::string& s) {
 
     // Check if empty after prefix removal
     if (hex.empty()) {
-        throw std::invalid_argument("Empty hex string.");
+        throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::Empty, "hex string");
     }
 
     // Parse hex string to __uint128_t
@@ -385,7 +385,7 @@ BFieldElement bfe_from_hex_string(const std::string& s) {
     for (char c : hex) {
         // Check for hex digit
         if (!std::isxdigit(c)) {
-            throw std::invalid_argument("Invalid hex character.");
+            throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::InvalidHexChar);
         }
 
         value <<= 4;
@@ -399,7 +399,7 @@ BFieldElement bfe_from_hex_string(const std::string& s) {
 
         // Check overflow
         if (value >= ((__uint128_t)1 << 127)) {
-            throw std::overflow_error("Hex value too large.");
+            throw BFieldElementStringConversionError(BFieldElementStringConversionError::ErrorType::Overflow, "hex value");
         }
     }
 
