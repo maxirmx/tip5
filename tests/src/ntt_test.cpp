@@ -536,7 +536,6 @@ TEST(NTTTest, UnscaleTest) {
 
     // Test that unscaling twice is different from unscaling once
     {
-        const size_t size = 4;
         std::vector<BFieldElement> vec = {
             BFieldElement::new_element(10),
             BFieldElement::new_element(20),

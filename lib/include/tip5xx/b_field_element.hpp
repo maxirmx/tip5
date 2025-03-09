@@ -413,11 +413,11 @@ static BFieldElement bfe_from(T value) {
     return BFieldElement::new_element(static_cast<uint64_t>(value));
 }
 
-static BFieldElement bfe_from(__uint128_t value) {
+[[ maybe_unused ]] static BFieldElement bfe_from(__uint128_t value) {
     return BFieldElement::new_element(BFieldElement::mod_reduce(value)); }
 
 // Constructor for int64_t values
-static BFieldElement bfe_from(int64_t value) {
+[[ maybe_unused ]] static BFieldElement bfe_from(int64_t value) {
     if (value >= 0) {
         // Non-negative case - directly convert to u128
         return bfe_from(static_cast<__uint128_t>(value));
