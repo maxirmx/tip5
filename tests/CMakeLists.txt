@@ -26,6 +26,7 @@ add_executable(tip5xx_tests
     src/tip5xx_test.cpp
     src/b_field_element_test.cpp
     src/x_field_element_test.cpp
+    src/ntt_test.cpp
 )
 
 set_target_properties(tip5xx_tests PROPERTIES
