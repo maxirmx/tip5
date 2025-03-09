@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 #include "tip5xx/ntt.hpp"
+#include "tip5xx/ntt_error.hpp"
 #include "tip5xx/b_field_element.hpp"
 #include "tip5xx/x_field_element.hpp"
 #include "random_generator.hpp"
@@ -375,22 +376,22 @@ TEST(NTTTest, NonPowerOf2Test) {
             // Test ntt
             EXPECT_THROW({
                 ntt(invalid_bfe);
-            }, std::invalid_argument) << "ntt should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "ntt should throw for non-power-of-2 size: " << size;
 
             // Test intt
             EXPECT_THROW({
                 intt(invalid_bfe);
-            }, std::invalid_argument) << "intt should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "intt should throw for non-power-of-2 size: " << size;
 
             // Test ntt_noswap
             EXPECT_THROW({
                 ntt_noswap(invalid_bfe);
-            }, std::invalid_argument) << "ntt_noswap should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "ntt_noswap should throw for non-power-of-2 size: " << size;
 
             // Test intt_noswap
             EXPECT_THROW({
                 intt_noswap(invalid_bfe);
-            }, std::invalid_argument) << "intt_noswap should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "intt_noswap should throw for non-power-of-2 size: " << size;
         }
     }
 
@@ -408,22 +409,22 @@ TEST(NTTTest, NonPowerOf2Test) {
             // Test ntt
             EXPECT_THROW({
                 ntt(invalid_xfe);
-            }, std::invalid_argument) << "ntt should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "ntt should throw for non-power-of-2 size: " << size;
 
             // Test intt
             EXPECT_THROW({
                 intt(invalid_xfe);
-            }, std::invalid_argument) << "intt should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "intt should throw for non-power-of-2 size: " << size;
 
             // Test ntt_noswap
             EXPECT_THROW({
                 ntt_noswap(invalid_xfe);
-            }, std::invalid_argument) << "ntt_noswap should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "ntt_noswap should throw for non-power-of-2 size: " << size;
 
             // Test intt_noswap
             EXPECT_THROW({
                 intt_noswap(invalid_xfe);
-            }, std::invalid_argument) << "intt_noswap should throw for non-power-of-2 size: " << size;
+            }, NTTInvalidLengthError) << "intt_noswap should throw for non-power-of-2 size: " << size;
         }
     }
 }
@@ -434,11 +435,11 @@ TEST(NTTTest, NonPowerOf2ExceptionMessageTest) {
 
     try {
         ntt(invalid_bfe);
-        FAIL() << "Expected std::invalid_argument exception";
-    } catch (std::invalid_argument& e) {
+        FAIL() << "Expected NTTInvalidLengthError exception";
+    } catch (const NTTInvalidLengthError& e) {
         EXPECT_STREQ("Input length must be a power of 2", e.what());
     } catch (...) {
-        FAIL() << "Expected std::invalid_argument exception";
+        FAIL() << "Expected NTTInvalidLengthError exception";
     }
 }
 
@@ -463,7 +464,7 @@ TEST(NTTTest, BorderlineSizeTest) {
 
         EXPECT_THROW({
             ntt(invalid_bfe);
-        }, std::invalid_argument) << "ntt should throw for borderline size: " << size;
+        }, NTTInvalidLengthError) << "ntt should throw for borderline size: " << size;
     }
 
     // Valid powers of 2 should not throw

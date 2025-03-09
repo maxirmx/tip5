@@ -26,27 +26,9 @@
 
 namespace tip5xx {
 
-class XFieldElementError : public Tip5xxError {
+class NTTInvalidLengthError : public Tip5xxError {
 public:
-    enum class ErrorType {
-        InvalidUnlift,
-        NoRootOfUnity,
-        InverseOfZero
-    };
-
-    XFieldElementError(ErrorType type, const std::string& message)
-        : Tip5xxError(message), type_(type) {}
-
-    ErrorType type() const { return type_; }
-
-private:
-    ErrorType type_;
-};
-
-class XFieldElementInverseError : public XFieldElementError {
-public:
-    XFieldElementInverseError()
-        : XFieldElementError(ErrorType::InverseOfZero, "Cannot invert the zero element in the extension field") {}
+    NTTInvalidLengthError() : Tip5xxError("Input length must be a power of 2") {}
 };
 
 } // namespace tip5xx

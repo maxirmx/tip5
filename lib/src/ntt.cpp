@@ -22,13 +22,14 @@
 
 #include <cmath>
 #include "tip5xx/ntt.hpp"
+#include "tip5xx/ntt_error.hpp"
 
 namespace tip5xx {
 
 // Check if slice_len is a power of 2 (n & (n-1) == 0 for powers of 2)
 static void ensure_power_of_two(size_t n) {
     if (!n || (n & (n - 1)))
-        throw std::invalid_argument("Input length must be a power of 2");
+        throw NTTInvalidLengthError();
 }
 
 template<typename FF>

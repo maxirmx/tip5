@@ -22,31 +22,14 @@
 
 #pragma once
 
-#include "tip5xx/tip5xx_error.hpp"
+#include <stdexcept>
+#include <string>
 
 namespace tip5xx {
 
-class XFieldElementError : public Tip5xxError {
+class Tip5xxError : public std::runtime_error {
 public:
-    enum class ErrorType {
-        InvalidUnlift,
-        NoRootOfUnity,
-        InverseOfZero
-    };
-
-    XFieldElementError(ErrorType type, const std::string& message)
-        : Tip5xxError(message), type_(type) {}
-
-    ErrorType type() const { return type_; }
-
-private:
-    ErrorType type_;
-};
-
-class XFieldElementInverseError : public XFieldElementError {
-public:
-    XFieldElementInverseError()
-        : XFieldElementError(ErrorType::InverseOfZero, "Cannot invert the zero element in the extension field") {}
+    explicit Tip5xxError(const std::string& message) : std::runtime_error(message) {}
 };
 
 } // namespace tip5xx
