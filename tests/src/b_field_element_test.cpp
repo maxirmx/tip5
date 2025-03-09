@@ -1404,3 +1404,110 @@ TEST(BFieldElementTest, ModReduce) {
         EXPECT_EQ(expected, result) << "Failed for hi=" << hi << ", lo=" << lo;
     }
 }
+
+// Test BFieldElement lift method
+TEST(BFieldElementTest, LiftTest) {
+    // Test lifting basic values
+    {
+        BFieldElement b_val = BFieldElement::new_element(42);
+        XFieldElement x_val = b_val.lift();
+
+        // Verify constant coefficient is correct
+        EXPECT_EQ(x_val.coefficients()[0], b_val);
+
+        // Verify other coefficients are zero
+        EXPECT_EQ(x_val.coefficients()[1], BFieldElement::ZERO);
+        EXPECT_EQ(x_val.coefficients()[2], BFieldElement::ZERO);
+    }
+
+    // Test lifting special values
+    {
+        // Test ZERO
+        XFieldElement lifted_zero = BFieldElement::ZERO.lift();
+        EXPECT_TRUE(lifted_zero.is_zero());
+        EXPECT_FALSE(lifted_zero.is_one());
+
+        // Test ONE
+        XFieldElement lifted_one = BFieldElement::ONE.lift();
+        EXPECT_TRUE(lifted_one.is_one());
+        EXPECT_FALSE(lifted_one.is_zero());
+
+        // Test MAX
+        XFieldElement lifted_max = BFieldElement::MAX.lift();
+        EXPECT_EQ(lifted_max.coefficients()[0], BFieldElement::MAX);
+        EXPECT_EQ(lifted_max.coefficients()[1], BFieldElement::ZERO);
+        EXPECT_EQ(lifted_max.coefficients()[2], BFieldElement::ZERO);
+    }
+
+    // Test consistency with XFieldElement::new_const
+    {
+        BFieldElement b_val = BFieldElement::new_element(123456);
+        XFieldElement x_val1 = b_val.lift();
+        XFieldElement x_val2 = XFieldElement::new_const(b_val);
+
+        EXPECT_EQ(x_val1, x_val2);
+    }
+
+    // Test arithmetic operations preserve lifted value semantics
+    {
+        BFieldElement b1 = BFieldElement::new_element(5);
+        BFieldElement b2 = BFieldElement::new_element(7);
+
+        XFieldElement x1 = b1.lift();
+        XFieldElement x2 = b2.lift();
+
+        // Addition
+        EXPECT_EQ((x1 + x2).coefficients()[0], b1 + b2);
+        EXPECT_EQ((x1 + x2).coefficients()[1], BFieldElement::ZERO);
+
+        // Multiplication
+        EXPECT_EQ((x1 * x2).coefficients()[0], b1 * b2);
+        EXPECT_EQ((x1 * x2).coefficients()[1], BFieldElement::ZERO);
+
+        // Subtraction
+        EXPECT_EQ((x1 - x2).coefficients()[0], b1 - b2);
+        EXPECT_EQ((x1 - x2).coefficients()[1], BFieldElement::ZERO);
+    }
+
+    // Test random values
+    {
+        RandomGenerator rng;
+
+        for (int i = 0; i < 10; i++) {
+            BFieldElement random_bfe = rng.random_bfe();
+            XFieldElement lifted = random_bfe.lift();
+
+            EXPECT_EQ(lifted.coefficients()[0], random_bfe);
+            EXPECT_EQ(lifted.coefficients()[1], BFieldElement::ZERO);
+            EXPECT_EQ(lifted.coefficients()[2], BFieldElement::ZERO);
+        }
+    }
+
+    // Test composability with other operations
+    {
+        BFieldElement b1 = BFieldElement::new_element(3);
+        BFieldElement b2 = BFieldElement::new_element(4);
+
+        // Test (3 + 4).lift() == 3.lift() + 4.lift()
+        EXPECT_EQ((b1 + b2).lift(), b1.lift() + b2.lift());
+
+        // Test (3 * 4).lift() == 3.lift() * 4.lift()
+        EXPECT_EQ((b1 * b2).lift(), b1.lift() * b2.lift());
+    }
+
+    // Test interaction with XFieldElement's polynomial terms
+    {
+        BFieldElement b = BFieldElement::new_element(5);
+        XFieldElement x_with_terms = XFieldElement::new_element({
+            BFieldElement::ZERO,
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(2)
+        });
+
+        XFieldElement result = b.lift() + x_with_terms;
+
+        EXPECT_EQ(result.coefficients()[0], b);
+        EXPECT_EQ(result.coefficients()[1], BFieldElement::new_element(3));
+        EXPECT_EQ(result.coefficients()[2], BFieldElement::new_element(2));
+    }
+}
