@@ -35,7 +35,7 @@ std::string ParseBFieldElementError::build_message(ErrorType type, const std::st
     std::ostringstream oss;
     switch (type) {
         case ErrorType::NotCanonical:
-            oss << detail << " must be in canonical (open) interval (-" << BFieldElement::P - 1 << ", " << BFieldElement::P - 1 << ")";
+            oss << detail << " must be in canonical (open) interval (-" << BFieldElement::MAX_VALUE << ", " << BFieldElement::MAX_VALUE << ")";
             break;
 //        case ErrorType::InvalidNumBytes:
 //            oss << "incorrect number of bytes: " << detail << " != " << BFieldElement::BYTES << " == `BFieldElement::BYTES`";
@@ -43,7 +43,7 @@ std::string ParseBFieldElementError::build_message(ErrorType type, const std::st
     }
     return oss.str();
 }
-/*
+
 std::string TryFromXFieldElementError::build_message(ErrorType type, const std::string& detail) {
     std::ostringstream oss;
     switch (type) {
@@ -85,7 +85,7 @@ std::string TryFromHexDigestError::build_message(ErrorType type, const std::stri
     }
     return oss.str();
 }
-*/
+
 std::string BFieldElementStringConversionError::build_message(ErrorType type, const std::string& detail) {
     std::ostringstream oss;
     switch (type) {

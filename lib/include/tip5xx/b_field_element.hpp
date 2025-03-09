@@ -64,7 +64,7 @@ public:
 
     // The base field's prime, i.e., 2^64 - 2^32 + 1
     static constexpr uint64_t P = 0xFFFFFFFF00000001ULL;
-    static constexpr uint64_t MAX = P - 1;
+    static constexpr uint64_t MAX_VALUE = BFieldElement::P-1;
 
     // 2^128 mod P; used for conversion of elements into Montgomery representation
     static constexpr uint64_t R2 = 0xFFFFFFFE00000001ULL;
@@ -75,6 +75,7 @@ public:
     // Constants
     static const BFieldElement ZERO;
     static const BFieldElement ONE;
+    static const BFieldElement MAX;
 
     // Constructors
     BFieldElement() : value_(0) {}
@@ -412,11 +413,11 @@ static BFieldElement bfe_from(T value) {
     return BFieldElement::new_element(static_cast<uint64_t>(value));
 }
 
-static BFieldElement bfe_from(__uint128_t value) {
+[[ maybe_unused ]] static BFieldElement bfe_from(__uint128_t value) {
     return BFieldElement::new_element(BFieldElement::mod_reduce(value)); }
 
 // Constructor for int64_t values
-static BFieldElement bfe_from(int64_t value) {
+[[ maybe_unused ]] static BFieldElement bfe_from(int64_t value) {
     if (value >= 0) {
         // Non-negative case - directly convert to u128
         return bfe_from(static_cast<__uint128_t>(value));

@@ -22,18 +22,16 @@
 
 #pragma once
 
-#include <stdexcept>
-#include <string>
+#include "tip5xx/tip5xx_error.hpp"
 #include <sstream>
 
 namespace tip5xx {
 
 class BFieldElement;  // Forward declaration
 
-// Base class for all custom exceptions
-class BFieldElementError : public std::runtime_error {
+class BFieldElementError : public Tip5xxError {
 public:
-    explicit BFieldElementError(const std::string& message) : std::runtime_error(message) {}
+    explicit BFieldElementError(const std::string& message) : Tip5xxError(message) {}
 };
 
 class BFieldElementInverseError : public BFieldElementError {
@@ -92,7 +90,7 @@ public:
     TryFromU32sError() : BFieldElementError("U32s<N>: `N` not big enough to hold the value") {}
 };
 
-/*
+
 // TryFromXFieldElementError
 class TryFromXFieldElementError : public BFieldElementError {
 public:
@@ -150,5 +148,5 @@ private:
 
     static std::string build_message(ErrorType type, const std::string& detail);
 };
-*/
+
 } // namespace tip5xx

@@ -127,7 +127,7 @@ TEST(BFieldElementTest, ValueIsPreserved) {
     RandomGenerator rng;
 
     for (int i = 0; i < 100; i++) {
-        uint64_t value = rng.random_range(BFieldElement::P - 1);
+        uint64_t value = rng.random_range(BFieldElement::MAX_VALUE);
         EXPECT_EQ(value, BFieldElement::new_element(value).value());
     }
 }
@@ -313,7 +313,7 @@ TEST(BFieldElementTest, Increment) {
 
 // Incrementing max value wraps around test (converted from test)
 TEST(BFieldElementTest, IncrementingMaxValueWrapsAround) {
-    BFieldElement bfe = BFieldElement::new_element(BFieldElement::MAX);
+    BFieldElement bfe = BFieldElement::new_element(BFieldElement::MAX_VALUE);
     bfe.increment();
     ASSERT_EQ(0, bfe.value());
 }
@@ -327,7 +327,7 @@ TEST(BFieldElementTest, Decrement) {
         uint64_t old_value = bfe.value();
 
         bfe.decrement();
-        uint64_t expected_value = (old_value == 0) ? BFieldElement::P - 1 : old_value - 1;
+        uint64_t expected_value = (old_value == 0) ? BFieldElement::MAX_VALUE : old_value - 1;
 
         EXPECT_EQ(expected_value, bfe.value());
     }
@@ -337,7 +337,7 @@ TEST(BFieldElementTest, Decrement) {
 TEST(BFieldElementTest, DecrementingMinValueWrapsAround) {
     BFieldElement bfe = BFieldElement::ZERO;
     bfe.decrement();
-    ASSERT_EQ(BFieldElement::MAX, bfe.value());
+    ASSERT_EQ(BFieldElement::MAX_VALUE, bfe.value());
 }
 
 // Empty batch inversion test (converted from test)
@@ -380,7 +380,7 @@ TEST(BFieldElementTest, MultiplicativeInverseOfZero) {
 // Supposed generator is generator test (converted from test)
 TEST(BFieldElementTest, SupposedGeneratorIsGenerator) {
     BFieldElement generator = BFieldElement::generator();
-    uint64_t largest_meaningful_power = BFieldElement::P - 1;
+    uint64_t largest_meaningful_power = BFieldElement::MAX_VALUE;
     BFieldElement generator_pow_p = generator.mod_pow(largest_meaningful_power);
     BFieldElement generator_pow_p_half = generator.mod_pow(largest_meaningful_power / 2);
 
@@ -392,24 +392,11 @@ TEST(BFieldElementTest, SupposedGeneratorIsGenerator) {
 TEST(BFieldElementTest, AddSubWrapAroundTest) {
     // Test overflow behaviors
     BFieldElement element = BFieldElement::new_element(4);
-    BFieldElement sum = BFieldElement::new_element(BFieldElement::MAX) + element;
+    BFieldElement sum = BFieldElement::MAX + element;
     ASSERT_EQ(BFieldElement::new_element(3), sum);
 
     BFieldElement diff = sum - element;
-    ASSERT_EQ(BFieldElement::new_element(BFieldElement::MAX), diff);
-}
-
-TEST(BFieldElementTest, NegTest) {
-    // Test negation
-    ASSERT_EQ(-BFieldElement::ZERO, BFieldElement::ZERO);
-    ASSERT_EQ((-BFieldElement::ONE).value(), BFieldElement::MAX);
-
-    BFieldElement max = BFieldElement::new_element(BFieldElement::MAX);
-    BFieldElement max_plus_one = max + BFieldElement::ONE;
-    BFieldElement max_plus_two = max_plus_one + BFieldElement::ONE;
-
-    ASSERT_EQ(BFieldElement::ZERO, -max_plus_one);
-    ASSERT_EQ(max, -max_plus_two);
+    ASSERT_EQ(BFieldElement::MAX, diff);
 }
 
 // Mul div plus minus neg property test
@@ -491,9 +478,9 @@ TEST(BFieldElementTest, MulDivPropertyBasedTest) {
 // Test neg_test
 TEST(BFieldElementTest, NegationTest) {
     EXPECT_EQ(-BFieldElement::ZERO, BFieldElement::ZERO);
-    EXPECT_EQ((-BFieldElement::ONE).value(), BFieldElement::MAX);
+    EXPECT_EQ((-BFieldElement::ONE).value(), BFieldElement::MAX_VALUE);
 
-    BFieldElement max = BFieldElement::new_element(BFieldElement::MAX);
+    BFieldElement max = BFieldElement::MAX;
     BFieldElement max_plus_one = max + BFieldElement::ONE;
     BFieldElement max_plus_two = max_plus_one + BFieldElement::ONE;
 
@@ -510,7 +497,7 @@ TEST(BFieldElementTest, EqualityAndHashTest) {
     EXPECT_NE(BFieldElement::new_element(42), BFieldElement::new_element(43));
 
     BFieldElement a = BFieldElement::new_element(102);
-    BFieldElement b = BFieldElement::new_element(BFieldElement::MAX) + BFieldElement::new_element(103);
+    BFieldElement b = BFieldElement::MAX + BFieldElement::new_element(103);
     EXPECT_EQ(a, b);
     EXPECT_NE(BFieldElement::new_element(103), b);
 
@@ -630,8 +617,8 @@ TEST(BFieldElementTest, RandomSquares) {
 // Test equals
 TEST(BFieldElementTest, Equals) {
     BFieldElement a = BFieldElement::ONE;
-    BFieldElement b = BFieldElement::new_element(BFieldElement::MAX) *
-                     BFieldElement::new_element(BFieldElement::MAX);
+    BFieldElement b = BFieldElement::MAX *
+                     BFieldElement::MAX;
 
     // Elements should be equal
     EXPECT_EQ(a, b);
@@ -757,7 +744,7 @@ TEST(BFieldElementTest, MultipleTypeConversions) {
     EXPECT_NO_THROW(bfe_from(static_cast<size_t>(0)));
 
     // Test negative values
-    BFieldElement max = BFieldElement::new_element(BFieldElement::MAX);
+    BFieldElement max = BFieldElement::MAX;
     EXPECT_EQ(max, bfe_from(static_cast<int8_t>(-1)));
     EXPECT_EQ(max, bfe_from(static_cast<int16_t>(-1)));
     EXPECT_EQ(max, bfe_from(static_cast<int32_t>(-1)));
@@ -874,7 +861,7 @@ TEST(BFieldElementTest, Int64SpecificConversion) {
     EXPECT_EQ(BFieldElement::new_element(42), bfe_from(static_cast<int64_t>(42)));
 
     // Test negative values (including edge cases)
-    EXPECT_EQ(BFieldElement::new_element(BFieldElement::P - 1), bfe_from(static_cast<int64_t>(-1)));
+    EXPECT_EQ(BFieldElement::new_element(BFieldElement::MAX_VALUE), bfe_from(static_cast<int64_t>(-1)));
 
     // Test INT64_MIN
     BFieldElement int64_min_result = bfe_from(INT64_MIN);
@@ -1035,7 +1022,7 @@ TEST(BFieldElementTest, StreamOutputOperator) {
 
     // Test values near P (shown as negative)
     {
-        BFieldElement near_p = BFieldElement::new_element(BFieldElement::P - 1);
+        BFieldElement near_p = BFieldElement::new_element(BFieldElement::MAX_VALUE);
         std::stringstream ss;
         ss << near_p;
         EXPECT_EQ("-1", ss.str());
@@ -1094,7 +1081,7 @@ TEST(BFieldElementTest, BfeFromString) {
               bfe_from_string("18446744069414584319"));
 
     // Test negative values
-    EXPECT_EQ(BFieldElement::new_element(BFieldElement::P - 1), bfe_from_string("-1"));
+    EXPECT_EQ(BFieldElement::new_element(BFieldElement::MAX_VALUE), bfe_from_string("-1"));
     EXPECT_EQ(BFieldElement::new_element(BFieldElement::P - 42), bfe_from_string("-42"));
 
     // Test sign handling
@@ -1136,7 +1123,7 @@ TEST(BFieldElementTest, BfeFromHexString) {
     EXPECT_EQ(BFieldElement::new_element(0xABCD), bfe_from_hex_string("0xAbCd"));
 
     // Test large values near field modulus
-    EXPECT_EQ(BFieldElement::new_element(BFieldElement::P - 1),
+    EXPECT_EQ(BFieldElement::new_element(BFieldElement::MAX_VALUE),
               bfe_from_hex_string("0xFFFFFFFF00000000"));
 
     // Test max uint64_t value
@@ -1220,7 +1207,7 @@ TEST(BFieldElementTest, ToString) {
     EXPECT_EQ("256", BFieldElement::new_element(256).to_string());
 
     // Test negative values (values close to P)
-    EXPECT_EQ("-1", BFieldElement::new_element(BFieldElement::P - 1).to_string());
+    EXPECT_EQ("-1", BFieldElement::new_element(BFieldElement::MAX_VALUE).to_string());
     EXPECT_EQ("-42", BFieldElement::new_element(BFieldElement::P - 42).to_string());
     EXPECT_EQ("-256", BFieldElement::new_element(BFieldElement::P - 256).to_string());
 
@@ -1248,7 +1235,7 @@ TEST(BFieldElementTest, ToString) {
     EXPECT_EQ(expected3.str(), mid_range.to_string());
 
     // Test max value
-    BFieldElement max_value = BFieldElement::new_element(BFieldElement::MAX);
+    BFieldElement max_value = BFieldElement::MAX;
     EXPECT_EQ("-1", max_value.to_string());
 
     // Verify consistency with stream operator
@@ -1415,5 +1402,112 @@ TEST(BFieldElementTest, ModReduce) {
         if (is_overflow) expected += 0xFFFFFFFF;
 
         EXPECT_EQ(expected, result) << "Failed for hi=" << hi << ", lo=" << lo;
+    }
+}
+
+// Test BFieldElement lift method
+TEST(BFieldElementTest, LiftTest) {
+    // Test lifting basic values
+    {
+        BFieldElement b_val = BFieldElement::new_element(42);
+        XFieldElement x_val = b_val.lift();
+
+        // Verify constant coefficient is correct
+        EXPECT_EQ(x_val.coefficients()[0], b_val);
+
+        // Verify other coefficients are zero
+        EXPECT_EQ(x_val.coefficients()[1], BFieldElement::ZERO);
+        EXPECT_EQ(x_val.coefficients()[2], BFieldElement::ZERO);
+    }
+
+    // Test lifting special values
+    {
+        // Test ZERO
+        XFieldElement lifted_zero = BFieldElement::ZERO.lift();
+        EXPECT_TRUE(lifted_zero.is_zero());
+        EXPECT_FALSE(lifted_zero.is_one());
+
+        // Test ONE
+        XFieldElement lifted_one = BFieldElement::ONE.lift();
+        EXPECT_TRUE(lifted_one.is_one());
+        EXPECT_FALSE(lifted_one.is_zero());
+
+        // Test MAX
+        XFieldElement lifted_max = BFieldElement::MAX.lift();
+        EXPECT_EQ(lifted_max.coefficients()[0], BFieldElement::MAX);
+        EXPECT_EQ(lifted_max.coefficients()[1], BFieldElement::ZERO);
+        EXPECT_EQ(lifted_max.coefficients()[2], BFieldElement::ZERO);
+    }
+
+    // Test consistency with XFieldElement::new_const
+    {
+        BFieldElement b_val = BFieldElement::new_element(123456);
+        XFieldElement x_val1 = b_val.lift();
+        XFieldElement x_val2 = XFieldElement::new_const(b_val);
+
+        EXPECT_EQ(x_val1, x_val2);
+    }
+
+    // Test arithmetic operations preserve lifted value semantics
+    {
+        BFieldElement b1 = BFieldElement::new_element(5);
+        BFieldElement b2 = BFieldElement::new_element(7);
+
+        XFieldElement x1 = b1.lift();
+        XFieldElement x2 = b2.lift();
+
+        // Addition
+        EXPECT_EQ((x1 + x2).coefficients()[0], b1 + b2);
+        EXPECT_EQ((x1 + x2).coefficients()[1], BFieldElement::ZERO);
+
+        // Multiplication
+        EXPECT_EQ((x1 * x2).coefficients()[0], b1 * b2);
+        EXPECT_EQ((x1 * x2).coefficients()[1], BFieldElement::ZERO);
+
+        // Subtraction
+        EXPECT_EQ((x1 - x2).coefficients()[0], b1 - b2);
+        EXPECT_EQ((x1 - x2).coefficients()[1], BFieldElement::ZERO);
+    }
+
+    // Test random values
+    {
+        RandomGenerator rng;
+
+        for (int i = 0; i < 10; i++) {
+            BFieldElement random_bfe = rng.random_bfe();
+            XFieldElement lifted = random_bfe.lift();
+
+            EXPECT_EQ(lifted.coefficients()[0], random_bfe);
+            EXPECT_EQ(lifted.coefficients()[1], BFieldElement::ZERO);
+            EXPECT_EQ(lifted.coefficients()[2], BFieldElement::ZERO);
+        }
+    }
+
+    // Test composability with other operations
+    {
+        BFieldElement b1 = BFieldElement::new_element(3);
+        BFieldElement b2 = BFieldElement::new_element(4);
+
+        // Test (3 + 4).lift() == 3.lift() + 4.lift()
+        EXPECT_EQ((b1 + b2).lift(), b1.lift() + b2.lift());
+
+        // Test (3 * 4).lift() == 3.lift() * 4.lift()
+        EXPECT_EQ((b1 * b2).lift(), b1.lift() * b2.lift());
+    }
+
+    // Test interaction with XFieldElement's polynomial terms
+    {
+        BFieldElement b = BFieldElement::new_element(5);
+        XFieldElement x_with_terms = XFieldElement::new_element({
+            BFieldElement::ZERO,
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(2)
+        });
+
+        XFieldElement result = b.lift() + x_with_terms;
+
+        EXPECT_EQ(result.coefficients()[0], b);
+        EXPECT_EQ(result.coefficients()[1], BFieldElement::new_element(3));
+        EXPECT_EQ(result.coefficients()[2], BFieldElement::new_element(2));
     }
 }
