@@ -70,6 +70,10 @@ public:
     Polynomial<FF> operator/(const Polynomial<FF>& other) const;
     Polynomial<FF> operator%(const Polynomial<FF>& other) const;
 
+    // Comparison operators
+    bool operator==(const Polynomial<FF>& other) const;
+    bool operator!=(const Polynomial<FF>& other) const { return !(*this == other); }
+
     // Advanced operations
     Polynomial<FF> scale(const FF& alpha) const;
     Polynomial<FF> pow(uint32_t exponent) const;
