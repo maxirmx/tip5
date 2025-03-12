@@ -20,10 +20,12 @@
 //
 // This file is a part of tip5xx library
 
+#include <algorithm>
 #include <cassert>
 #include <sstream>
 #include "tip5xx/x_field_element.hpp"
 #include "tip5xx/x_field_element_error.hpp"
+#include "tip5xx/polynomial.hpp"
 
 namespace tip5xx {
 
@@ -35,32 +37,26 @@ XFieldElement XFieldElement::inverse_impl() const {
         throw XFieldElementInverseError();
     }
 
-    // Calculate inverse using a*a^(-1) ≡ 1 (mod x³ - x + 1)
-    // Given that our field is defined by x³ - x + 1
-    const BFieldElement& a = coefficients_[0];
-    const BFieldElement& b = coefficients_[1];
-    const BFieldElement& c = coefficients_[2];
+    // Convert this XFieldElement to polynomial
+    std::vector<BFieldElement> this_coeffs(coefficients_.begin(), coefficients_.end());
+    tip5xx::Polynomial<BFieldElement> this_poly(this_coeffs);
 
-    // Compute denominator: (a² - bc) - (ac - b²)x + c²x²
-    BFieldElement a_sqr = a.square();
-    BFieldElement b_sqr = b.square();
-    BFieldElement c_sqr = c.square();
-    BFieldElement bc = b * c;
-    BFieldElement ac = a * c;
+    // Define shah polynomial (x³ - x + 1)
+    std::vector<BFieldElement> shah_coeffs = {BFieldElement::ONE, -BFieldElement::ONE, BFieldElement::ZERO, BFieldElement::ONE};
+    tip5xx::Polynomial<BFieldElement> shah_poly(shah_coeffs);
 
-    BFieldElement denom_0 = a_sqr - bc;
-    BFieldElement denom_1 = b_sqr - ac;
-    BFieldElement denom_2 = c_sqr;
+    // Calculate extended GCD
+    auto [_, a, __] = tip5xx::Polynomial<BFieldElement>::xgcd(this_poly, shah_poly);
 
-    // inv = ((a² - bc) + (b² - ac)x + c²x²) / ((a² - bc)² + (b² - ac)² + c⁴)
-    BFieldElement inv_denom = denom_0.square() + denom_1.square() + denom_2.square();
-    inv_denom = inv_denom.inverse();
+    // Convert result polynomial back to XFieldElement
+    auto& result_coeffs = a.coefficients();
+    std::array<BFieldElement, EXTENSION_DEGREE> inverse_coeffs;
+    std::fill(inverse_coeffs.begin(), inverse_coeffs.end(), BFieldElement::ZERO);
+    for(size_t i = 0; i < std::min<size_t>(result_coeffs.size(), inverse_coeffs.size()); i++) {
+        inverse_coeffs[i] = result_coeffs[i];
+    }
 
-    return XFieldElement({
-        denom_0 * inv_denom,
-        denom_1 * inv_denom,
-        denom_2 * inv_denom
-    });
+    return XFieldElement(inverse_coeffs);
 }
 
 XFieldElement XFieldElement::primitive_root_of_unity_impl(uint64_t n) {

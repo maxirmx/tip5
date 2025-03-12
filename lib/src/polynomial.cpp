@@ -357,4 +357,17 @@ template Polynomial<XFieldElement> operator*(const Polynomial<XFieldElement>&, c
 // Explicit instantiations of evaluate method
 template XFieldElement Polynomial<BFieldElement>::evaluate<XFieldElement>(const XFieldElement&) const;
 
+template<typename FF>
+std::tuple<Polynomial<FF>, Polynomial<FF>, Polynomial<FF>> Polynomial<FF>::xgcd(
+    const Polynomial<FF>& a, const Polynomial<FF>&) {
+    // Placeholder implementation - returns just first polynomial as GCD and unit coefficients for s and t
+    return {a, Polynomial<FF>(FF::one()), Polynomial<FF>(FF::one())};
+}
+
+// Add XGCD explicit instantiation
+template std::tuple<Polynomial<BFieldElement>, Polynomial<BFieldElement>, Polynomial<BFieldElement>>
+Polynomial<BFieldElement>::xgcd(const Polynomial<BFieldElement>&, const Polynomial<BFieldElement>&);
+template std::tuple<Polynomial<XFieldElement>, Polynomial<XFieldElement>, Polynomial<XFieldElement>>
+Polynomial<XFieldElement>::xgcd(const Polynomial<XFieldElement>&, const Polynomial<XFieldElement>&);
+
 } // namespace tip5xx
