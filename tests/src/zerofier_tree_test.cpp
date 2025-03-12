@@ -551,3 +551,250 @@ TEST_F(BranchNodeTest, EqualsMethodRandomized) {
         ASSERT_EQ(same_domain, branch1.equals(&branch2));
     }
 }
+
+// Test fixture for ZerofierTree constructors
+class ZerofierTreeConstructorTest : public ::testing::Test {
+    protected:
+        RandomGenerator rng;
+};
+
+// Test default (empty) constructor
+TEST_F(ZerofierTreeConstructorTest, DefaultConstructor) {
+    // Create a tree with default constructor
+    ZerofierTree<BFieldElement> empty_tree;
+
+    // Check that it behaves as expected
+    EXPECT_TRUE(empty_tree.zerofier().is_one())
+        << "Default constructor should create a tree with zerofier = 1";
+
+    // Test with XFieldElement as well
+    ZerofierTree<XFieldElement> empty_x_tree;
+    EXPECT_TRUE(empty_x_tree.zerofier().is_one())
+        << "Default constructor should work with different field types";
+}
+
+// Test points (leaf) constructor with various inputs
+TEST_F(ZerofierTreeConstructorTest, PointsConstructor) {
+    // Test with empty points vector
+    {
+        std::vector<BFieldElement> empty_points;
+        ZerofierTree<BFieldElement> tree(empty_points);
+
+        EXPECT_TRUE(tree.zerofier().is_one())
+            << "Constructor with empty points should create a tree with zerofier = 1";
+    }
+
+    // Test with single point
+    {
+        BFieldElement point = BFieldElement::new_element(42);
+        std::vector<BFieldElement> points = {point};
+
+        ZerofierTree<BFieldElement> tree(points);
+        auto polynomial = tree.zerofier();
+
+        EXPECT_EQ(polynomial.degree(), 1)
+            << "Zerofier of single point should have degree 1";
+        EXPECT_EQ(polynomial.evaluate(point), BFieldElement::zero())
+            << "Zerofier should evaluate to zero at the point";
+    }
+
+    // Test with multiple points
+    {
+        std::vector<BFieldElement> points = {
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3)
+        };
+
+        ZerofierTree<BFieldElement> tree(points);
+        auto polynomial = tree.zerofier();
+
+        EXPECT_EQ(polynomial.degree(), points.size())
+            << "Zerofier degree should match number of points";
+
+        for (const auto& point : points) {
+            EXPECT_EQ(polynomial.evaluate(point), BFieldElement::zero())
+                << "Zerofier should evaluate to zero at all points";
+        }
+    }
+
+    // Test with special values
+    {
+        std::vector<BFieldElement> points = {
+            BFieldElement::ZERO,
+            BFieldElement::ONE,
+            BFieldElement::MAX
+        };
+
+        ZerofierTree<BFieldElement> tree(points);
+        auto polynomial = tree.zerofier();
+
+        for (const auto& point : points) {
+            EXPECT_EQ(polynomial.evaluate(point), BFieldElement::zero())
+                << "Zerofier should handle special values correctly";
+        }
+    }
+
+    // Test with XFieldElement
+    {
+        std::vector<XFieldElement> x_points = {
+            XFieldElement::new_const(BFieldElement::new_element(1)),
+            XFieldElement::new_const(BFieldElement::new_element(2))
+        };
+
+        ZerofierTree<XFieldElement> tree(x_points);
+        auto polynomial = tree.zerofier();
+
+        EXPECT_EQ(polynomial.degree(), x_points.size())
+            << "Constructor should work with XFieldElement";
+
+        for (const auto& point : x_points) {
+            EXPECT_EQ(polynomial.evaluate(point), XFieldElement::zero())
+                << "Zerofier should evaluate to zero at all XFieldElement points";
+        }
+    }
+
+    // Test with random points
+    {
+        std::vector<BFieldElement> random_points;
+        size_t count = 5 + (rand() % 5); // 5-9 points
+
+        for (size_t i = 0; i < count; i++) {
+            random_points.push_back(rng.random_bfe());
+        }
+
+        ZerofierTree<BFieldElement> tree(random_points);
+        auto polynomial = tree.zerofier();
+
+        EXPECT_EQ(polynomial.degree(), random_points.size())
+            << "Constructor should handle random points correctly";
+
+        for (const auto& point : random_points) {
+            EXPECT_EQ(polynomial.evaluate(point), BFieldElement::zero())
+                << "Zerofier should evaluate to zero at random points";
+        }
+    }
+}
+
+// Test branch constructor (with left and right children)
+TEST_F(ZerofierTreeConstructorTest, BranchConstructor) {
+    // Test with both children null
+    {
+        std::shared_ptr<ZerofierTree<BFieldElement>> left_null;
+        std::shared_ptr<ZerofierTree<BFieldElement>> right_null;
+
+        ZerofierTree<BFieldElement> tree(left_null, right_null);
+
+        EXPECT_TRUE(tree.zerofier().is_one())
+            << "Constructor with null children should create a tree with zerofier = 1";
+    }
+
+    // Test with left child null
+    {
+        std::shared_ptr<ZerofierTree<BFieldElement>> left_null;
+        auto right = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(42)});
+
+        ZerofierTree<BFieldElement> tree(left_null, right);
+
+        EXPECT_EQ(tree.zerofier(), right->zerofier())
+            << "Should use right child's zerofier when left is null";
+    }
+
+    // Test with right child null
+    {
+        auto left = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(42)});
+        std::shared_ptr<ZerofierTree<BFieldElement>> right_null;
+
+        ZerofierTree<BFieldElement> tree(left, right_null);
+
+        EXPECT_EQ(tree.zerofier(), left->zerofier())
+            << "Should use left child's zerofier when right is null";
+    }
+
+    // Test with both children non-null
+    {
+        auto left = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(1)});
+        auto right = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(2)});
+
+        ZerofierTree<BFieldElement> tree(left, right);
+
+        // The zerofier should be the product of left and right zerofiers
+        EXPECT_EQ(tree.zerofier(), left->zerofier() * right->zerofier())
+            << "Branch node zerofier should be product of children zerofiers";
+
+        // Verify it evaluates to zero at both points
+        EXPECT_EQ(tree.zerofier().evaluate(BFieldElement::new_element(1)), BFieldElement::zero());
+        EXPECT_EQ(tree.zerofier().evaluate(BFieldElement::new_element(2)), BFieldElement::zero());
+    }
+
+    // Test with empty trees as children
+    {
+        auto left_empty = std::make_shared<ZerofierTree<BFieldElement>>();
+        auto right_empty = std::make_shared<ZerofierTree<BFieldElement>>();
+
+        ZerofierTree<BFieldElement> tree(left_empty, right_empty);
+
+        EXPECT_TRUE(tree.zerofier().is_one())
+            << "Constructor with empty children should create a tree with zerofier = 1";
+    }
+
+    // Test with empty tree and non-empty tree
+    {
+        auto left_empty = std::make_shared<ZerofierTree<BFieldElement>>();
+        auto right = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(42)});
+
+        ZerofierTree<BFieldElement> tree(left_empty, right);
+
+        EXPECT_EQ(tree.zerofier(), right->zerofier())
+            << "Should handle combination of empty and non-empty trees";
+    }
+
+    // Test with XFieldElement
+    {
+        auto left = std::make_shared<ZerofierTree<XFieldElement>>(
+            std::vector<XFieldElement>{XFieldElement::new_const(BFieldElement::new_element(1))});
+        auto right = std::make_shared<ZerofierTree<XFieldElement>>(
+            std::vector<XFieldElement>{XFieldElement::new_const(BFieldElement::new_element(2))});
+
+        ZerofierTree<XFieldElement> tree(left, right);
+
+        EXPECT_EQ(tree.zerofier().evaluate(XFieldElement::new_const(BFieldElement::new_element(1))),
+                    XFieldElement::zero())
+            << "Branch constructor should work with XFieldElement";
+
+        EXPECT_EQ(tree.zerofier().evaluate(XFieldElement::new_const(BFieldElement::new_element(2))),
+                    XFieldElement::zero())
+            << "Branch constructor should work with XFieldElement";
+    }
+
+    // Test with multi-level tree construction
+    {
+        // Create leaf trees
+        auto leaf1 = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(1)});
+        auto leaf2 = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(2)});
+        auto leaf3 = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(3)});
+        auto leaf4 = std::make_shared<ZerofierTree<BFieldElement>>(
+            std::vector<BFieldElement>{BFieldElement::new_element(4)});
+
+        // Create level-1 branches
+        auto branch1 = std::make_shared<ZerofierTree<BFieldElement>>(leaf1, leaf2);
+        auto branch2 = std::make_shared<ZerofierTree<BFieldElement>>(leaf3, leaf4);
+
+        // Create top-level tree
+        ZerofierTree<BFieldElement> tree(branch1, branch2);
+
+        // Verify it evaluates to zero at all points
+        EXPECT_EQ(tree.zerofier().evaluate(BFieldElement::new_element(1)), BFieldElement::zero());
+        EXPECT_EQ(tree.zerofier().evaluate(BFieldElement::new_element(2)), BFieldElement::zero());
+        EXPECT_EQ(tree.zerofier().evaluate(BFieldElement::new_element(3)), BFieldElement::zero());
+        EXPECT_EQ(tree.zerofier().evaluate(BFieldElement::new_element(4)), BFieldElement::zero());
+    }
+}
