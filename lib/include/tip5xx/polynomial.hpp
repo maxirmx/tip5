@@ -84,7 +84,9 @@ public:
     // Static factory methods
     static Polynomial<FF> zero();
     static Polynomial<FF> one();
-    static Polynomial<FF> x_to_the(size_t n);
+    static Polynomial<FF> from_constant(FF value);
+    static Polynomial<FF> x_minus_const(FF value);
+    static Polynomial<FF> x_to_the(uint64_t n);
     static Polynomial<FF> interpolate(const std::vector<FF>& domain, const std::vector<FF>& values);
     static Polynomial<FF> zerofier(const std::vector<FF>& roots);
 

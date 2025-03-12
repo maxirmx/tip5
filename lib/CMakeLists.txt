@@ -32,6 +32,7 @@ add_library(tip5xx
     "src/b_field_element.cpp"
     "src/b_field_element_error.cpp"
     "src/ntt.cpp"
+    "src/polynomial.cpp"
     "src/tip5xx.cpp"
     "src/x_field_element.cpp"
     "src/zerofier_tree.cpp"
