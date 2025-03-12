@@ -308,6 +308,42 @@ Polynomial<FF> Polynomial<FF>::x_to_the(uint64_t n) {
     return Polynomial<FF>(coeffs);
 }
 
+template<typename FF>
+Polynomial<FF> Polynomial<FF>::zerofier(const std::vector<FF>& roots) {
+    static const size_t FAST_ZEROFIER_CUTOFF_THRESHOLD = 100;
+
+    if (roots.empty()) {
+        return Polynomial<FF>::one();
+    }
+
+    if (roots.size() < FAST_ZEROFIER_CUTOFF_THRESHOLD) {
+        // Smart zerofier for small domains
+        std::vector<FF> coeffs(roots.size() + 1, FF::zero());
+        coeffs[0] = FF::one();
+        size_t num_coeffs = 1;
+
+        for (const auto& root : roots) {
+            for (size_t k = num_coeffs; k > 0; --k) {
+                coeffs[k] = coeffs[k-1] - root * coeffs[k];
+            }
+            coeffs[0] = -root * coeffs[0];
+            num_coeffs++;
+        }
+
+        return Polynomial<FF>(coeffs);
+    } else {
+        // Fast zerofier using divide-and-conquer for larger domains
+        const size_t mid_point = roots.size() / 2;
+        std::vector<FF> left_roots(roots.begin(), roots.begin() + mid_point);
+        std::vector<FF> right_roots(roots.begin() + mid_point, roots.end());
+
+        auto left = zerofier(left_roots);
+        auto right = zerofier(right_roots);
+
+        return left * right;
+    }
+}
+
 // Explicit instantiations
 template class Polynomial<BFieldElement>;
 template class Polynomial<XFieldElement>;

@@ -27,87 +27,76 @@
 
 namespace tip5xx {
 
-/**
- * @brief Structure representing a leaf node in the zerofier tree.
- *
- * @tparam FF Finite field type
- */
-template<typename FF>
-struct Leaf {
-    std::vector<FF> points;
-    Polynomial<FF> zerofier;
+// Forward declarations
+template<typename FF> class ZerofierTree;
 
-    explicit Leaf(const std::vector<FF>& points);
+template<typename FF>
+class ZerofierNode {
+public:
+    virtual ~ZerofierNode() = default;
+    virtual Polynomial<FF> zerofier() const = 0;
+    virtual bool equals(const ZerofierNode<FF>* other) const = 0;
 };
 
-/**
- * @brief Structure representing a branch node in the zerofier tree.
- *
- * @tparam FF Finite field type
- */
 template<typename FF>
-struct Branch;  // Forward declaration
+class LeafNode : public ZerofierNode<FF> {
+public:
+    std::vector<FF> points;
+    Polynomial<FF> zerofier_poly;
 
-/**
- * @brief A zerofier tree is a balanced binary tree of vanishing polynomials.
- *
- * Conceptually, every leaf corresponds to a single point, and the value of
- * that leaf is the monic linear polynomial that evaluates to zero there and
- * nowhere else. Every non-leaf node is the product of its two children.
- *
- * In practice, it makes sense to truncate the tree depth, in which case every
- * leaf contains a chunk of points whose size is upper-bounded and more or less
- * equal to some constant threshold.
- *
- * @tparam FF Finite field type
- */
+    explicit LeafNode(const std::vector<FF>& pts);
+    Polynomial<FF> zerofier() const override { return zerofier_poly; }
+    bool equals(const ZerofierNode<FF>* other) const override;
+};
+
+template<typename FF>
+class BranchNode : public ZerofierNode<FF> {
+public:
+    Polynomial<FF> zerofier_poly;
+    std::shared_ptr<ZerofierTree<FF>> left;
+    std::shared_ptr<ZerofierTree<FF>> right;
+
+    BranchNode(std::shared_ptr<ZerofierTree<FF>> l, std::shared_ptr<ZerofierTree<FF>> r);
+    Polynomial<FF> zerofier() const override { return zerofier_poly; }
+    bool equals(const ZerofierNode<FF>* other) const override;
+};
+
 template<typename FF>
 class ZerofierTree {
 public:
-    // Constructors
-    ZerofierTree() = default;  // Padding case
-    explicit ZerofierTree(const Leaf<FF>& leaf);  // Leaf case
-    explicit ZerofierTree(const Branch<FF>& branch);  // Branch case
+    ZerofierTree() = default;  // Empty/padding case
+    explicit ZerofierTree(const std::vector<FF>& points); // Leaf case
+    ZerofierTree(std::shared_ptr<ZerofierTree<FF>> left, std::shared_ptr<ZerofierTree<FF>> right); // Branch case
 
     // Factory method
-    static ZerofierTree new_from_domain(const std::vector<FF>& domain);
+    static std::shared_ptr<ZerofierTree<FF>> new_from_domain(const std::vector<FF>& domain);
 
     // Core functionality
-    Polynomial<FF> zerofier() const;
+    Polynomial<FF> zerofier() const { return node ? node->zerofier() : Polynomial<FF>::one(); }
 
     // Equality comparison
     bool operator==(const ZerofierTree& other) const;
-    bool operator!=(const ZerofierTree& other) const;
+    bool operator!=(const ZerofierTree& other) const { return !(*this == other); };
 
 private:
-    static constexpr size_t RECURSION_CUTOFF_THRESHOLD = 16;
-
-    enum class NodeType {
-        Leaf,
-        Branch,
-        Padding
-    };
-
-    NodeType type;
-    std::shared_ptr<void> node;  // Either Leaf<FF> or Branch<FF> based on type
+    std::shared_ptr<ZerofierNode<FF>> node;
 };
 
-/**
- * @brief Structure representing a branch node in the zerofier tree.
- *
- * @tparam FF Finite field type
- */
 template<typename FF>
-struct Branch {
-    Polynomial<FF> zerofier;
-    ZerofierTree<FF> left;
-    ZerofierTree<FF> right;
+bool operator==(const std::shared_ptr<ZerofierTree<FF>>& lhs,
+                const std::shared_ptr<ZerofierTree<FF>>& rhs) {
+    // Handle null cases
+    if (!lhs && !rhs) return true;
+    if (!lhs || !rhs) return false;
 
-    Branch(const ZerofierTree<FF>& left, const ZerofierTree<FF>& right);
-};
+    // Delegate to the ZerofierTree's equality operator
+    return *lhs == *rhs;
+}
 
-// Explicit instantiations
-extern template class ZerofierTree<BFieldElement>;
-extern template class ZerofierTree<XFieldElement>;
+template<typename FF>
+bool operator!=(const std::shared_ptr<ZerofierTree<FF>>& lhs,
+                const std::shared_ptr<ZerofierTree<FF>>& rhs) {
+    return !(lhs == rhs);
+}
 
 } // namespace tip5xx

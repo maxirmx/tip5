@@ -141,8 +141,8 @@ public:
     std::vector<BFieldElement> cyclic_group_elements_impl(size_t max = 0) const;
 
     // Static methods required by FiniteField
-    static BFieldElement zero() { return ZERO; }
-    static BFieldElement one() { return ONE; }
+    static BFieldElement zero() { return BFieldElement::new_element(0UL); }
+    static BFieldElement one() { return BFieldElement::new_element(1UL); }
 
     // Lift to XFieldElement
     XFieldElement lift() const;
