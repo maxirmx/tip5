@@ -252,6 +252,8 @@ public:
         return *this == ONE;
     }
 
+    BFieldElement& operator=(const XFieldElement& rhs);
+
     // Arithmetic operators
     BFieldElement operator+(const BFieldElement& rhs) const;
     BFieldElement& operator+=(const BFieldElement& rhs);

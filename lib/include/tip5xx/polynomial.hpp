@@ -44,14 +44,14 @@ public:
     explicit Polynomial(FF constant);  // Constant polynomial
 
     // Basic operations
-    bool is_zero() const;
-    bool is_one() const;
-    bool is_x() const;
+    bool is_zero() const { return coeffs.empty(); }
+    bool is_one() const  { return coeffs.size() == 1 && coeffs[0] == FF::one(); }
+    bool is_x() const    { return coeffs.size() == 2 && coeffs[0].is_zero() && coeffs[1] == FF::one(); }
 
     // Degree and coefficients
-    int64_t degree() const;
-    std::optional<FF> leading_coefficient() const;
-    const std::vector<FF>& coefficients() const;
+    const std::vector<FF>& coefficients() const { return coeffs; };
+    int64_t degree() const { return coeffs.empty() ? -1 : static_cast<int64_t>(coeffs.size() - 1); }
+    std::optional<FF> leading_coefficient() const { return coeffs.empty() ? std::optional<FF>() : std::optional<FF>(coeffs.back()); }
 
     // Core functionality
     Polynomial<FF> formal_derivative() const;
@@ -66,16 +66,20 @@ public:
     // Arithmetic operations
     Polynomial<FF> operator+(const Polynomial<FF>& other) const;
     Polynomial<FF> operator-(const Polynomial<FF>& other) const;
-    Polynomial<FF> operator*(const Polynomial<FF>& other) const;
+    template<typename XF>
+    Polynomial<FF> operator*(const Polynomial<XF>& other) const;
     Polynomial<FF> operator/(const Polynomial<FF>& other) const;
     Polynomial<FF> operator%(const Polynomial<FF>& other) const;
 
     // Comparison operators
-    bool operator==(const Polynomial<FF>& other) const;
-    bool operator!=(const Polynomial<FF>& other) const { return !(*this == other); }
+    template<typename XF>
+    bool operator==(const Polynomial<XF>& other) const;
+    template<typename XF>
+    bool operator!=(const Polynomial<XF>& other) const { return !(*this == other); }
 
     // Advanced operations
-    Polynomial<FF> scale(const FF& alpha) const;
+    template<typename XF>
+    Polynomial<FF> scale(const XF& alpha) const;
     Polynomial<FF> pow(uint32_t exponent) const;
     Polynomial<FF> square() const;
     std::pair<Polynomial<FF>, Polynomial<FF>> divide(const Polynomial<FF>& other) const;
@@ -105,9 +109,16 @@ public:
     static std::tuple<Polynomial<FF>, Polynomial<FF>, Polynomial<FF>> xgcd(
         const Polynomial<FF>& x, const Polynomial<FF>& y);
 
+    // Convert to string representation
+    std::string to_string() const;
+
+    // Return a polynomial that owns its coefficients. Clones the coefficients
+    // if they are not already owned.
+    Polynomial<FF> into_owned() const;
+    void normalize();
+
 private:
     std::vector<FF> coeffs;
-    void normalize();
 };
 
 // Allow multiplication by field elements from either side

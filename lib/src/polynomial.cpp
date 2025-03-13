@@ -23,13 +23,6 @@
 namespace tip5xx {
 
 template<typename FF>
-void Polynomial<FF>::normalize() {
-    while (!coeffs.empty() && coeffs.back().is_zero()) {
-        coeffs.pop_back();
-    }
-}
-
-template<typename FF>
 Polynomial<FF>::Polynomial() : coeffs() {
     // Zero polynomial has no coefficients
 }
@@ -47,33 +40,35 @@ Polynomial<FF>::Polynomial(FF constant) {
 }
 
 template<typename FF>
-bool Polynomial<FF>::is_zero() const {
-    return coeffs.empty();
+void Polynomial<FF>::normalize() {
+    while (!coeffs.empty() && coeffs.back().is_zero()) {
+        coeffs.pop_back();
+    }
 }
 
 template<typename FF>
-bool Polynomial<FF>::is_one() const {
-    return coeffs.size() == 1 && coeffs[0] == FF::one();
-}
+std::tuple<Polynomial<FF>, Polynomial<FF>, Polynomial<FF>> Polynomial<FF>::xgcd(
+    const Polynomial<FF>& a, const Polynomial<FF>& b) {
+    if (b.is_zero()) {
+        // If b is zero, the greatest common divisor is a, and additional coefficients are (1, 0)
+        return std::make_tuple(
+            a.into_owned(),
+            Polynomial<FF>(FF::one()),
+            Polynomial<FF>()
+        );
+    }
 
-template<typename FF>
-bool Polynomial<FF>::is_x() const {
-    return coeffs.size() == 2 && coeffs[0].is_zero() && coeffs[1] == FF::one();
-}
+    // Use a.divide(b) to obtain both quotient and remainder
+    auto [quotient, remainder] = a.divide(b);
 
-template<typename FF>
-int64_t Polynomial<FF>::degree() const {
-    return coeffs.empty() ? -1 : static_cast<int64_t>(coeffs.size() - 1);
-}
+    // Recursive call - obtain GCD and Bézout coefficients for next iteration
+    auto [gcd, s, t] = xgcd(b, remainder);
 
-template<typename FF>
-std::optional<FF> Polynomial<FF>::leading_coefficient() const {
-    return coeffs.empty() ? std::optional<FF>() : std::optional<FF>(coeffs.back());
-}
+    // Compute new Bézout coefficients
+    auto new_s = t.into_owned();  // s' = t
+    auto new_t = s - quotient * t;  // t' = s - q * t
 
-template<typename FF>
-const std::vector<FF>& Polynomial<FF>::coefficients() const {
-    return coeffs;
+    return std::make_tuple(gcd, new_s, new_t);
 }
 
 template<typename FF>
@@ -105,7 +100,8 @@ Polynomial<FF> Polynomial<FF>::operator-(const Polynomial<FF>& other) const {
 }
 
 template<typename FF>
-Polynomial<FF> Polynomial<FF>::operator*(const Polynomial<FF>& other) const {
+template<typename XF>
+Polynomial<FF> Polynomial<FF>::operator*(const Polynomial<XF>& other) const {
     if (this->degree() < 0 || other.degree() < 0) {
         return Polynomial<FF>();
     }
@@ -163,12 +159,36 @@ std::pair<Polynomial<FF>, Polynomial<FF>> Polynomial<FF>::divide(const Polynomia
 }
 
 template<typename FF>
-bool Polynomial<FF>::operator==(const Polynomial<FF>& other) const {
+template<typename XF>
+bool Polynomial<FF>::operator==(const Polynomial<XF>& other) const {
     if (this->degree() != other.degree()) {
         return false;
     }
 
-    return std::equal(coeffs.begin(), coeffs.end(), other.coefficients().begin());
+    for (size_t i = 0; i < coeffs.size(); ++i) {
+        // Handle different field element type combinations
+        if constexpr (std::is_same_v<FF, XFieldElement> && std::is_same_v<XF, BFieldElement>) {
+            // FF is XFieldElement and XF is BFieldElement
+            // Need to compare XFieldElement with lifted BFieldElement
+            if (coeffs[i] != other.coefficients()[i].lift()) {
+                return false;
+            }
+        }
+        else if constexpr (std::is_same_v<FF, BFieldElement> && std::is_same_v<XF, XFieldElement>) {
+            // FF is BFieldElement and XF is XFieldElement
+            // Need to compare lifted BFieldElement with XFieldElement
+            if (coeffs[i].lift() != other.coefficients()[i]) {
+                return false;
+            }
+        }
+        else {
+            // Same types - direct comparison
+            if (coeffs[i] != other.coefficients()[i]) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 template<typename FF>
@@ -208,7 +228,8 @@ Polynomial<FF> operator*(const Polynomial<FF>& poly, const FF& scalar) {
 }
 
 template<typename FF>
-Polynomial<FF> Polynomial<FF>::scale(const FF& alpha) const {
+template<typename XF>
+Polynomial<FF> Polynomial<FF>::scale(const XF& alpha) const {
     std::vector<FF> scaled_coeffs;
     scaled_coeffs.reserve(coeffs.size());
 
@@ -348,26 +369,61 @@ Polynomial<FF> Polynomial<FF>::zerofier(const std::vector<FF>& roots) {
 template class Polynomial<BFieldElement>;
 template class Polynomial<XFieldElement>;
 
-// Operator instantiations
-template Polynomial<BFieldElement> operator*(const BFieldElement&, const Polynomial<BFieldElement>&);
-template Polynomial<BFieldElement> operator*(const Polynomial<BFieldElement>&, const BFieldElement&);
-template Polynomial<XFieldElement> operator*(const XFieldElement&, const Polynomial<XFieldElement>&);
-template Polynomial<XFieldElement> operator*(const Polynomial<XFieldElement>&, const XFieldElement&);
-
 // Explicit instantiations of evaluate method
 template XFieldElement Polynomial<BFieldElement>::evaluate<XFieldElement>(const XFieldElement&) const;
 
+// Explicit instantiations of operator==
+template bool Polynomial<BFieldElement>::operator==<BFieldElement>(const Polynomial<BFieldElement>& other) const;
+template bool Polynomial<XFieldElement>::operator==<BFieldElement>(const Polynomial<BFieldElement>& other) const;
+template bool Polynomial<BFieldElement>::operator==<XFieldElement>(const Polynomial<XFieldElement>& other) const;
+template bool Polynomial<XFieldElement>::operator==<XFieldElement>(const Polynomial<XFieldElement>& other) const;
+
+// Explicit instantiations of scale method
+template Polynomial<BFieldElement> Polynomial<BFieldElement>::scale<BFieldElement>(const BFieldElement&) const;
+template Polynomial<BFieldElement> Polynomial<BFieldElement>::scale<XFieldElement>(const XFieldElement&) const;
+template Polynomial<XFieldElement> Polynomial<XFieldElement>::scale<BFieldElement>(const BFieldElement&) const;
+template Polynomial<XFieldElement> Polynomial<XFieldElement>::scale<XFieldElement>(const XFieldElement&) const;
+
+// Explicit instantiations of to_string method
+template std::string Polynomial<BFieldElement>::to_string() const;
+template std::string Polynomial<XFieldElement>::to_string() const;
+
 template<typename FF>
-std::tuple<Polynomial<FF>, Polynomial<FF>, Polynomial<FF>> Polynomial<FF>::xgcd(
-    const Polynomial<FF>& a, const Polynomial<FF>&) {
-    // Placeholder implementation - returns just first polynomial as GCD and unit coefficients for s and t
-    return {a, Polynomial<FF>(FF::one()), Polynomial<FF>(FF::one())};
+std::string Polynomial<FF>::to_string() const {
+    if (is_zero()) {
+        return "0";
+    }
+
+    std::string result;
+    bool first = true;
+
+    for (int i = static_cast<int>(coeffs.size()) - 1; i >= 0; --i) {
+        if (coeffs[i].is_zero()) continue;
+
+        if (!first) {
+            result += " + ";
+        }
+
+        if (!coeffs[i].is_one() || i == 0) {
+            result += coeffs[i].to_string();
+        }
+
+        if (i > 0) {
+            result += "x";
+            if (i > 1) {
+                result += "^" + std::to_string(i);
+            }
+        }
+
+        first = false;
+    }
+
+    return result;
 }
 
-// Add XGCD explicit instantiation
-template std::tuple<Polynomial<BFieldElement>, Polynomial<BFieldElement>, Polynomial<BFieldElement>>
-Polynomial<BFieldElement>::xgcd(const Polynomial<BFieldElement>&, const Polynomial<BFieldElement>&);
-template std::tuple<Polynomial<XFieldElement>, Polynomial<XFieldElement>, Polynomial<XFieldElement>>
-Polynomial<XFieldElement>::xgcd(const Polynomial<XFieldElement>&, const Polynomial<XFieldElement>&);
+template<typename FF>
+Polynomial<FF> Polynomial<FF>::into_owned() const {
+    return Polynomial<FF>(coeffs);
+}
 
 } // namespace tip5xx

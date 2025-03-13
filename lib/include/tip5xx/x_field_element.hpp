@@ -149,6 +149,12 @@ public:
         return coefficients_ == rhs.coefficients_;
     }
 
+    bool operator==(const BFieldElement& rhs) const {
+        return coefficients_[0] == rhs &&
+               coefficients_[1] == BFieldElement::ZERO &&
+               coefficients_[2] == BFieldElement::ZERO;
+    }
+
     bool operator!=(const XFieldElement& rhs) const {
         return !(*this == rhs);
     }
@@ -169,7 +175,7 @@ std::ostream& operator<<(std::ostream& os, const XFieldElement& xfe);
 std::istream& operator>>(std::istream& is, XFieldElement& xfe);
 
 // Macros for convenient creation
-#define xfe(x) XFieldElement::new_const(BFieldElement::new_element(x))
+#define xfe_from(x) XFieldElement::new_const(BFieldElement::new_element(x))
 #define xfe_vec(...) createXfeVec(__VA_ARGS__)
 #define xfe_array(...) createXfeArray(__VA_ARGS__)
 

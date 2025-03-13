@@ -28,6 +28,7 @@ add_executable(tip5xx_tests
     src/ntt_test.cpp
     src/x_field_element_test.cpp
     src/zerofier_tree_test.cpp
+    src/polynomial_test.cpp
 )
 
 set_target_properties(tip5xx_tests PROPERTIES

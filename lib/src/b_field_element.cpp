@@ -220,6 +220,10 @@ std::vector<BFieldElement> BFieldElement::cyclic_group_elements_impl(size_t max)
     return result;
 }
 
+BFieldElement& BFieldElement::operator=(const XFieldElement& rhs) {
+    return *this = rhs.unlift();
+}
+
 // Addition operator
 BFieldElement BFieldElement::operator+(const BFieldElement& rhs) const {
     // Compute a + b = a - (p - b)
