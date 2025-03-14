@@ -26,10 +26,6 @@ add_executable(tip5xx_tests
     src/tip5xx_test.cpp
     src/b_field_element_test.cpp
     src/digest_test.cpp
-    src/ntt_test.cpp
-    src/x_field_element_test.cpp
-    src/zerofier_tree_test.cpp
-    src/polynomial_test.cpp
 )
 
 set_target_properties(tip5xx_tests PROPERTIES

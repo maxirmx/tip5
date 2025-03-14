@@ -21,7 +21,6 @@
 // This file is a part of tip5xx library
 
 #include "tip5xx/b_field_element.hpp"
-#include "tip5xx/x_field_element.hpp"
 
 namespace tip5xx {
 
@@ -218,10 +217,6 @@ std::vector<BFieldElement> BFieldElement::cyclic_group_elements_impl(size_t max)
     }
 
     return result;
-}
-
-BFieldElement& BFieldElement::operator=(const XFieldElement& rhs) {
-    return *this = rhs.unlift();
 }
 
 // Addition operator
@@ -421,11 +416,6 @@ std::string BFieldElement::to_string() const {
     }
 
     return ss.str();
-}
-
-// Implement XFieldElement lift
-XFieldElement BFieldElement::lift() const {
-    return XFieldElement::new_const(*this);
 }
 
 } // namespace tip5xx

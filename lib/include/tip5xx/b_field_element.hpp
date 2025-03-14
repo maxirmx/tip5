@@ -40,9 +40,6 @@
 
 namespace tip5xx {
 
-// Forward declarations
-class XFieldElement;
-
 /**
  * Base field element ∈ ℤ_{2^64 - 2^32 + 1}.
  *
@@ -144,10 +141,8 @@ public:
     static BFieldElement zero() { return ZERO; }
     static BFieldElement one() { return ONE; }
 
-    // Lift to XFieldElement
-    XFieldElement lift() const;
 
-    // Testing utilities
+
     void increment() {
         *this += ONE;
     }
@@ -251,8 +246,6 @@ public:
     bool is_one() const {
         return *this == ONE;
     }
-
-    BFieldElement& operator=(const XFieldElement& rhs);
 
     // Arithmetic operators
     BFieldElement operator+(const BFieldElement& rhs) const;

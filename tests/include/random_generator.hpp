@@ -25,7 +25,6 @@
 #include <random>
 #include <vector>
 #include "tip5xx/b_field_element.hpp"
-#include "tip5xx/x_field_element.hpp"
 
 using namespace tip5xx;
 
@@ -84,27 +83,6 @@ public:
 
         for (size_t i = 0; i < n; i++) {
             elements.push_back(random_bfe());
-        }
-
-        return elements;
-    }
-
-    // Generate random XFieldElement
-    XFieldElement random_xfe() {
-        std::array<BFieldElement, XFieldElement::EXTENSION_DEGREE> coeffs;
-        for (size_t i = 0; i < XFieldElement::EXTENSION_DEGREE; i++) {
-            coeffs[i] = random_bfe();
-        }
-        return XFieldElement::new_element(coeffs);
-    }
-
-    // Generate multiple random XFieldElements
-    std::vector<XFieldElement> random_xfe_elements(size_t n) {
-        std::vector<XFieldElement> elements;
-        elements.reserve(n);
-
-        for (size_t i = 0; i < n; i++) {
-            elements.push_back(random_xfe());
         }
 
         return elements;
