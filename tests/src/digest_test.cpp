@@ -678,7 +678,7 @@ TEST_F(DigestTest, VectorArrayConversions) {
 }
 
 // Test the hash function implementation
-/*TEST_F(DigestTest, HashFunctionComprehensive) {
+TEST_F(DigestTest, HashFunctionComprehensive) {
     // Test that hash of default digest is not the same as input
     Digest empty;
     Digest hashed = empty.hash();
@@ -707,7 +707,7 @@ TEST_F(DigestTest, VectorArrayConversions) {
     Digest hashComplex = complex.hash();
     EXPECT_NE(complex, hashComplex);
 }
-*/
+
 // Test overflow handling in various operations
 TEST_F(DigestTest, OverflowHandling) {
     // Create digest with maximum values
