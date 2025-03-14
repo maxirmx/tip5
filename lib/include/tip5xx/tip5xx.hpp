@@ -37,6 +37,9 @@ namespace tip5xx {
 
 class Tip5 {
 public:
+    // Hash a pair of digests
+    static class Digest hash_pair(const class Digest& left, const class Digest& right);
+
     // Hash a pair of byte arrays
     static std::vector<uint8_t> hash_pair(const std::vector<uint8_t>& left, const std::vector<uint8_t>& right);
 
