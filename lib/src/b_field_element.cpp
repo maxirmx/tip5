@@ -280,20 +280,7 @@ BFieldElement BFieldElement::operator-() const {
 
 // Stream output operator
 std::ostream& operator<<(std::ostream& os, const BFieldElement& bfe) {
-    uint64_t canonical_value = bfe.value();
-    const uint64_t cutoff = 256;
-
-    if (canonical_value >= BFieldElement::P - cutoff) {
-        os << "-" << (BFieldElement::P - canonical_value);
-    } else if (canonical_value <= cutoff) {
-        os << canonical_value;
-    } else {
-        os.width(20);
-        os.fill('0');
-        os << canonical_value;
-    }
-
-    return os;
+    return os << bfe.to_string();
 }
 
 // Convert from string representation, handling both positive and negative values
@@ -429,11 +416,7 @@ std::string BFieldElement::to_string() const {
 
     if (canonical_value >= BFieldElement::P - cutoff) {
         ss << "-" << (BFieldElement::P - canonical_value);
-    } else if (canonical_value <= cutoff) {
-        ss << canonical_value;
     } else {
-        ss.width(20);
-        ss.fill('0');
         ss << canonical_value;
     }
 

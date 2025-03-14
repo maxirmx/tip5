@@ -476,12 +476,6 @@ Polynomial<FF> Polynomial<FF>::into_owned() const {
 template class Polynomial<BFieldElement>;
 template class Polynomial<XFieldElement>;
 
-// Explicit instantiations for are_colinear_3 and are_colinear
-template bool Polynomial<BFieldElement>::are_colinear_3(std::pair<BFieldElement,BFieldElement>, std::pair<BFieldElement,BFieldElement>, std::pair<BFieldElement,BFieldElement>);
-template bool Polynomial<BFieldElement>::are_colinear(const std::vector<std::pair<BFieldElement,BFieldElement>>&);
-template bool Polynomial<XFieldElement>::are_colinear_3(std::pair<XFieldElement,XFieldElement>, std::pair<XFieldElement,XFieldElement>, std::pair<XFieldElement,XFieldElement>);
-template bool Polynomial<XFieldElement>::are_colinear(const std::vector<std::pair<XFieldElement,XFieldElement>>&);
-
 // Explicit instantiations of evaluate method
 template XFieldElement Polynomial<BFieldElement>::evaluate<XFieldElement>(const XFieldElement&) const;
 
@@ -509,9 +503,16 @@ template void Polynomial<BFieldElement>::scalar_mul_mut<XFieldElement>(const XFi
 template void Polynomial<XFieldElement>::scalar_mul_mut<BFieldElement>(const BFieldElement&);
 template void Polynomial<XFieldElement>::scalar_mul_mut<XFieldElement>(const XFieldElement&);
 
+// Explicit instantiations for are_colinear_3 and are_colinear
+// template bool Polynomial<BFieldElement>::are_colinear_3(std::pair<BFieldElement,BFieldElement>, std::pair<BFieldElement,BFieldElement>, std::pair<BFieldElement,BFieldElement>);
+// template bool Polynomial<BFieldElement>::are_colinear(const std::vector<std::pair<BFieldElement,BFieldElement>>&);
+// template bool Polynomial<XFieldElement>::are_colinear_3(std::pair<XFieldElement,XFieldElement>, std::pair<XFieldElement,XFieldElement>, std::pair<XFieldElement,XFieldElement>);
+// template bool Polynomial<XFieldElement>::are_colinear(const std::vector<std::pair<XFieldElement,XFieldElement>>&);
+
+
 // Explicit instantiations of to_string method
-template std::string Polynomial<BFieldElement>::to_string() const;
-template std::string Polynomial<XFieldElement>::to_string() const;
+// template std::string Polynomial<BFieldElement>::to_string() const;
+// template std::string Polynomial<XFieldElement>::to_string() const;
 
 
 } // namespace tip5xx

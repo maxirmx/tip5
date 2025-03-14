@@ -24,6 +24,7 @@
  *
  */
 
+#include "tip5xx/digest.hpp"
 #include "tip5xx/tip5xx.hpp"
 
 namespace tip5xx {
@@ -119,5 +120,11 @@ std::vector<uint8_t> Tip5::hash_varlen(const std::vector<std::vector<uint8_t>>& 
 
     return result;
 }
+
+// Hash a pair of digests
+class Digest Tip5::hash_pair(const class Digest& left, const class Digest& right) {
+    return Digest();
+    /* hash_pair(left.to_bytes(), right.to_bytes()); */
+};
 
 } // namespace tip5xx

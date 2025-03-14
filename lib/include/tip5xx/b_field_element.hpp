@@ -446,20 +446,4 @@ static BFieldElement bfe_from(T value) {
     }
 }
 
-// Helper functions to make conversions more explicit when needed
-template <typename T>
-T bfe_to(const BFieldElement& bfe) {
-    return bfe.to<T>();
-}
-
-template <typename T>
-bool try_bfe_to(const BFieldElement& bfe, T& output) {
-    try {
-        output = bfe.to<T>();
-        return true;
-    } catch (const BFieldElementError&) {
-        return false;
-    }
-}
-
 } // namespace tip5xx
