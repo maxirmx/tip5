@@ -141,7 +141,7 @@ std::optional<Digest> Digest::from_hex(const std::string& hex_str) {
 std::array<uint8_t, Digest::BYTES> Digest::to_bytes() const {
     std::array<uint8_t, BYTES> result;
     for (size_t i = 0; i < LEN; i++) {
-        auto bytes = elements_[i].raw_bytes();
+        auto bytes = elements_[i].to_bytes();
         std::copy(bytes.begin(), bytes.end(), result.begin() + i * BFieldElement::BYTES);
     }
     return result;
@@ -154,17 +154,17 @@ std::optional<Digest> Digest::from_bytes(const std::array<uint8_t, BYTES>& bytes
     for (size_t i = 0; i < LEN; ++i) {
         uint64_t value = 0;
 
-        // Convert 8 bytes to 64-bit value in little-endian order
-        for (size_t j = 0; j < BFieldElement::BYTES; ++j) {
-            value |= static_cast<uint64_t>(bytes[i * BFieldElement::BYTES + j]) << (j * 8);
-        }
+        // Extract 8 bytes for this element and convert to BFieldElement
+        std::array<uint8_t, BFieldElement::BYTES> element_bytes;
+        std::copy_n(bytes.begin() + i * BFieldElement::BYTES,
+                BFieldElement::BYTES,
+                element_bytes.begin());
 
-        // Check if the value is canonical
-        if (value >= BFieldElement::MAX_VALUE) {
-            return std::nullopt; // Non-canonical value
+        try {
+            elements[i] = BFieldElement::from_bytes(element_bytes);
+        } catch (const BFieldElementError&) {
+            return std::nullopt; // Invalid byte representation
         }
-
-        elements[i] = BFieldElement::new_element(value);
     }
 
     return std::optional<Digest>(Digest(elements));

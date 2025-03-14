@@ -136,10 +136,33 @@ BFieldElement BFieldElement::mod_pow_u64(uint64_t exp) const {
     return mod_pow(exp);
 }
 
+std::array<uint8_t, 8> BFieldElement::to_bytes() const {
+    std::array<uint8_t, 8> result;
+    uint64_t val = value();
+
+    for (int i = 0; i < 8; i++) {
+        result[i] = static_cast<uint8_t>(val & 0xFF);
+        val >>= 8;
+    }
+
+    return result;
+}
+
+BFieldElement BFieldElement::from_bytes(const std::array<uint8_t, 8>& bytes) {
+    uint64_t result = 0;
+
+    for (int i = 7; i >= 0; i--) {
+        result = (result << 8) | bytes[i];
+    }
+
+    return try_new(result);
+}
+
+
 // Raw byte conversions
 std::array<uint8_t, 8> BFieldElement::raw_bytes() const {
     std::array<uint8_t, 8> result;
-    uint64_t val = value();
+    uint64_t val = value_;
 
     for (int i = 0; i < 8; i++) {
         result[i] = static_cast<uint8_t>(val & 0xFF);
@@ -156,13 +179,13 @@ BFieldElement BFieldElement::from_raw_bytes(const std::array<uint8_t, 8>& bytes)
         result = (result << 8) | bytes[i];
     }
 
-    return try_new(result);
+    return BFieldElement(result);
 }
 
 // Raw 16-bit conversions
 std::array<uint16_t, 4> BFieldElement::raw_u16s() const {
     std::array<uint16_t, 4> result;
-    uint64_t val = value();
+    uint64_t val = value_;
 
     for (int i = 0; i < 4; i++) {
         result[i] = static_cast<uint16_t>(val & 0xFFFF);
@@ -179,7 +202,7 @@ BFieldElement BFieldElement::from_raw_u16s(const std::array<uint16_t, 4>& chunks
         result = (result << 16) | chunks[i];
     }
 
-    return try_new(result);
+    return BFieldElement(result);
 }
 
 // Implementation of PrimitiveRootOfUnity trait

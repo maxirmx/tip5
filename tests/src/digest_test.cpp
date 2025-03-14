@@ -121,6 +121,8 @@ TEST_F(DigestTest, ComparisonOperatorsComprehensive) {
 
         EXPECT_TRUE(a < b);
         EXPECT_FALSE(b < a);
+        EXPECT_FALSE(a < a);
+        EXPECT_FALSE(b > b);
         EXPECT_TRUE(a <= b);
         EXPECT_FALSE(b <= a);
         EXPECT_FALSE(a > b);

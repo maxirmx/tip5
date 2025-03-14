@@ -28,8 +28,7 @@
 #include <iomanip>
 #include <sstream>
 #include <optional>
-#include "b_field_element.hpp"
-#include "tip5xx.hpp"
+#include "tip5xx/b_field_element.hpp"
 
 namespace tip5xx {
 

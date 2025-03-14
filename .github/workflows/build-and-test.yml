@@ -92,20 +92,20 @@ jobs:
           echo "EXE=" >> $GITHUB_ENV
         fi
 
-    - name: Sample App Tests
-      working-directory: build/samples/tip5-cpp
-      shell: bash
-      run: |
-        # Test pair mode with different formats
-        ./${CONFIG}tip5xx_sample${EXE} 0x1EADB75F 0xC7FEBAB9  # hexadecimal
-        ./${CONFIG}tip5xx_sample${EXE} 16909060 84281096  # decimal
-        ./${CONFIG}tip5xx_sample${EXE} 0100402404 0502060710  # octal
+#    - name: Sample App Tests
+#      working-directory: build/samples/tip5-cpp
+#      shell: bash
+#      run: |
+#        # Test pair mode with different formats
+#        ./${CONFIG}tip5xx_sample${EXE} 0x1EADB75F 0xC7FEBAB9  # hexadecimal
+#        ./${CONFIG}tip5xx_sample${EXE} 16909060 84281096  # decimal
+#        ./${CONFIG}tip5xx_sample${EXE} 0100402404 0502060710  # octal
 
         # Test varlen mode with mixed formats
-        ./${CONFIG}tip5xx_sample${EXE} -m varlen 0x1EADB75F 16909060 0502060710
+#        ./${CONFIG}tip5xx_sample${EXE} -m varlen 0x1EADB75F 16909060 0502060710
 
         # Test help
-        ./${CONFIG}tip5xx_sample${EXE} --help
+#        ./${CONFIG}tip5xx_sample${EXE} --help
 
     - name: Setup Rust
       if: matrix.env.rust

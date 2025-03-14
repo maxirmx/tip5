@@ -23,7 +23,7 @@
 
 add_executable(tip5xx_tests
     include/random_generator.hpp
-#    src/tip5xx_test.cpp
+    src/tip5xx_test.cpp
     src/b_field_element_test.cpp
     src/digest_test.cpp
 )

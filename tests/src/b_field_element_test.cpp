@@ -38,7 +38,7 @@ TEST(BFieldElementTest, ByteArrayOfSmallFieldElementsIsZeroAtHighIndices) {
         BFieldElement bfe = BFieldElement::new_element(static_cast<uint64_t>(value));
 
         // Convert to byte array
-        std::array<uint8_t, 8> byte_array = bfe.raw_bytes();
+        std::array<uint8_t, 8> byte_array = bfe.to_bytes();
 
         // First byte should equal the input value
         EXPECT_EQ(value, byte_array[0]) << "Failed for value " << val;
@@ -82,7 +82,7 @@ TEST(BFieldElementTest, ByteArrayOutsideRangeIsNotAccepted) {
 
         // Try converting - this should throw an exception
         try {
-            [[maybe_unused]] BFieldElement bfe = BFieldElement::from_raw_bytes(byte_array);
+            [[maybe_unused]] BFieldElement bfe = BFieldElement::from_bytes(byte_array);
             FAIL() << "Should have rejected value outside range";
         } catch (const ParseBFieldElementError& e) {
             // Expected behavior
@@ -644,7 +644,7 @@ TEST(BFieldElementTest, TestRandomRaw) {
         for (size_t i = 0; i < bytes.size(); i++) {
             f += static_cast<uint64_t>(bytes[i]) << (8 * i);
         }
-        ASSERT_EQ(e, BFieldElement::new_element(f)) << "Manual byte reconstruction failed";
+        ASSERT_EQ(e, BFieldElement::from_raw_u64(f)) << "Manual byte reconstruction failed";
 
         // Test u16 chunk conversion round trip
         std::array<uint16_t, 4> chunks = e.raw_u16s();
@@ -656,7 +656,7 @@ TEST(BFieldElementTest, TestRandomRaw) {
         for (size_t i = 0; i < chunks.size(); i++) {
             h += static_cast<uint64_t>(chunks[i]) << (16 * i);
         }
-        BFieldElement n = BFieldElement::new_element(h);
+        BFieldElement n = BFieldElement::from_raw_u64(h);
         ASSERT_EQ(e, n) << "Manual u16 chunk reconstruction failed";
     }
 }

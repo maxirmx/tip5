@@ -262,32 +262,18 @@ public:
     BFieldElement operator-() const;
 
     // Equality and comparison
-    bool operator==(const BFieldElement& rhs) const {
-        return value() == rhs.value();
-    }
-
-    bool operator!=(const BFieldElement& rhs) const {
-        return !(*this == rhs);
-    }
-
-    bool operator<(const BFieldElement& rhs) const {
-        return value() < rhs.value();
-    }
-
-    bool operator<=(const BFieldElement& rhs) const {
-        return value() <= rhs.value();
-    }
-
-    bool operator>(const BFieldElement& rhs) const {
-        return value() > rhs.value();
-    }
-
-    bool operator>=(const BFieldElement& rhs) const {
-        return value() >= rhs.value();
-    }
+    bool operator==(const BFieldElement& rhs) const { return value() == rhs.value(); }
+    bool operator!=(const BFieldElement& rhs) const { return !(*this == rhs);        }
+    bool operator<(const BFieldElement& rhs)  const { return value() < rhs.value();  }
+    bool operator<=(const BFieldElement& rhs) const { return value() <= rhs.value(); }
+    bool operator>(const BFieldElement& rhs)  const { return value() > rhs.value();  }
+    bool operator>=(const BFieldElement& rhs) const { return value() >= rhs.value(); }
 
     // Convert to string representation
     std::string to_string() const;
+
+    std::array<uint8_t, 8> to_bytes() const;
+    static BFieldElement from_bytes(const std::array<uint8_t, 8>& bytes);
 
     // Explicit conversion methods that can throw exceptions for types that might not fit
     template <typename T>
@@ -316,13 +302,13 @@ public:
         }
     }
     // Explicit cast operators for small integer types that might fail
-    explicit operator uint8_t() const { return to<uint8_t>(); }
-    explicit operator int8_t() const { return to<int8_t>(); }
+    explicit operator uint8_t()  const { return to<uint8_t>();  }
+    explicit operator int8_t()   const { return to<int8_t>();   }
     explicit operator uint16_t() const { return to<uint16_t>(); }
-    explicit operator int16_t() const { return to<int16_t>(); }
+    explicit operator int16_t()  const { return to<int16_t>();  }
     explicit operator uint32_t() const { return to<uint32_t>(); }
-    explicit operator int32_t() const { return to<int32_t>(); }
-    explicit operator int64_t() const { return to<int64_t>(); }
+    explicit operator int32_t()  const { return to<int32_t>();  }
+    explicit operator int64_t()  const { return to<int64_t>();  }
 
     // Add size_t operator only when it's different from uint64_t (e.g., on macOS)
     #if defined(__APPLE__) || \
@@ -333,15 +319,10 @@ public:
     #endif
 
     // Implicit conversions for types that can always hold a BFieldElement value
-    operator uint64_t() const {
-        return canonical_representation();
-    }
+    operator uint64_t()    const { return canonical_representation();                           }
+    operator __uint128_t() const { return static_cast<__uint128_t>(canonical_representation()); }
 
-    operator __uint128_t() const {
-        return static_cast<__uint128_t>(canonical_representation());
-    }
-
-    operator __int128_t() const {
+    operator __int128_t()  const {
         uint64_t val = canonical_representation();
         if (val <= static_cast<uint64_t>(INT64_MAX)) {
             return static_cast<__int128_t>(val);
@@ -397,18 +378,6 @@ std::istream& operator>>(std::istream& is, BFieldElement& bfe);
 // Parse from string
 BFieldElement bfe_from_string(const std::string& str);
 BFieldElement bfe_from_hex_string(const std::string& str);
-
-// Macros to simplify creation
-#define bfe(x) BFieldElement::new_element(x)
-#define bfe_vec(...) createBfeVec(__VA_ARGS__)
-#define bfe_array(...) createBfeArray(__VA_ARGS__)
-
-// Helper functions for macros
-template<typename... Args>
-std::vector<BFieldElement> createBfeVec(Args... args);
-
-template<size_t N, typename... Args>
-std::array<BFieldElement, N> createBfeArray(Args... args);
 
 // Template method for integer types (both signed and unsigned)
 template <typename T>
