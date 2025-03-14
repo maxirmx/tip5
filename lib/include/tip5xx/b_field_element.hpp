@@ -277,6 +277,22 @@ public:
         return !(*this == rhs);
     }
 
+    bool operator<(const BFieldElement& rhs) const {
+        return value() < rhs.value();
+    }
+
+    bool operator<=(const BFieldElement& rhs) const {
+        return value() <= rhs.value();
+    }
+
+    bool operator>(const BFieldElement& rhs) const {
+        return value() > rhs.value();
+    }
+
+    bool operator>=(const BFieldElement& rhs) const {
+        return value() >= rhs.value();
+    }
+
     // Convert to string representation
     std::string to_string() const;
 

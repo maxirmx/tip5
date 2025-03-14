@@ -85,6 +85,10 @@ public:
     std::pair<Polynomial<FF>, Polynomial<FF>> divide(const Polynomial<FF>& other) const;
     Polynomial<FF> reduce(const Polynomial<FF>& modulus) const;
 
+    // Static methods
+    static bool are_colinear_3(std::pair<FF,FF> p0, std::pair<FF,FF> p1, std::pair<FF,FF> p2);
+    static bool are_colinear(const std::vector<std::pair<FF,FF>>& points);
+
     // Static factory methods
     static Polynomial<FF> zero();
     static Polynomial<FF> one();
@@ -100,6 +104,10 @@ public:
 
     // Clean Division
     Polynomial<FF> clean_divide(const Polynomial<FF>& divisor) const;
+
+    // In-place scalar multiplication
+    template<typename S>
+    void scalar_mul_mut(const S& scalar);
 
     // Parallelized versions
     static Polynomial<FF> par_interpolate(const std::vector<FF>& domain, const std::vector<FF>& values);

@@ -365,28 +365,74 @@ Polynomial<FF> Polynomial<FF>::zerofier(const std::vector<FF>& roots) {
     }
 }
 
-// Explicit instantiations
-template class Polynomial<BFieldElement>;
-template class Polynomial<XFieldElement>;
+template<typename FF>
+template<typename S>
+void Polynomial<FF>::scalar_mul_mut(const S& scalar) {
+    if constexpr (std::is_same_v<FF, XFieldElement> && std::is_same_v<S, BFieldElement>) {
+        // If FF is XFieldElement and S is BFieldElement, lift the scalar
+        for (auto& coefficient : coeffs) {
+            coefficient *= scalar.lift();
+        }
+    }
+    else if constexpr (std::is_same_v<FF, BFieldElement> && std::is_same_v<S, XFieldElement>) {
+        // If FF is BFieldElement and S is XFieldElement, cannot multiply directly
+        // This case should not be instantiated as it's not a valid operation
+        throw std::invalid_argument("Cannot multiply BFieldElement coefficients by XFieldElement scalar");
+    }
+    else {
+        // Same types or other valid combinations
+        for (auto& coefficient : coeffs) {
+            coefficient *= scalar;
+        }
+    }
+}
 
-// Explicit instantiations of evaluate method
-template XFieldElement Polynomial<BFieldElement>::evaluate<XFieldElement>(const XFieldElement&) const;
+template<typename FF>
+bool Polynomial<FF>::are_colinear_3(std::pair<FF,FF> p0, std::pair<FF,FF> p1, std::pair<FF,FF> p2) {
+    // Check for equal x-coordinates, which would make the slope undefined
+    if (p0.first == p1.first || p1.first == p2.first || p2.first == p0.first) {
+        return false;
+    }
 
-// Explicit instantiations of operator==
-template bool Polynomial<BFieldElement>::operator==<BFieldElement>(const Polynomial<BFieldElement>& other) const;
-template bool Polynomial<XFieldElement>::operator==<BFieldElement>(const Polynomial<BFieldElement>& other) const;
-template bool Polynomial<BFieldElement>::operator==<XFieldElement>(const Polynomial<XFieldElement>& other) const;
-template bool Polynomial<XFieldElement>::operator==<XFieldElement>(const Polynomial<XFieldElement>& other) const;
+    // Calculate slope between p0 and p1
+    FF dy = p0.second - p1.second;
+    FF dx = p0.first - p1.first;
 
-// Explicit instantiations of scale method
-template Polynomial<BFieldElement> Polynomial<BFieldElement>::scale<BFieldElement>(const BFieldElement&) const;
-template Polynomial<BFieldElement> Polynomial<BFieldElement>::scale<XFieldElement>(const XFieldElement&) const;
-template Polynomial<XFieldElement> Polynomial<XFieldElement>::scale<BFieldElement>(const BFieldElement&) const;
-template Polynomial<XFieldElement> Polynomial<XFieldElement>::scale<XFieldElement>(const XFieldElement&) const;
+    // Use slope comparison: (y2-y0)/(x2-x0) == (y1-y0)/(x1-x0)
+    // Written as: dx*(y2-y0) == dy*(x2-x0) to avoid division
+    return dx * (p2.second - p0.second) == dy * (p2.first - p0.first);
+}
 
-// Explicit instantiations of to_string method
-template std::string Polynomial<BFieldElement>::to_string() const;
-template std::string Polynomial<XFieldElement>::to_string() const;
+template<typename FF>
+bool Polynomial<FF>::are_colinear(const std::vector<std::pair<FF,FF>>& points) {
+    if (points.size() < 3) {
+        return false;
+    }
+
+    // Check for unique x-coordinates
+    for (size_t i = 0; i < points.size(); i++) {
+        for (size_t j = i + 1; j < points.size(); j++) {
+            if (points[i].first == points[j].first) {
+                return false;
+            }
+        }
+    }
+
+    // Find 1st degree polynomial through first two points
+    const auto& p0 = points[0];
+    const auto& p1 = points[1];
+    FF a = (p0.second - p1.second) / (p0.first - p1.first);
+    FF b = p0.second - a * p0.first;
+
+    // Check if all other points lie on this line
+    for (size_t i = 2; i < points.size(); ++i) {
+        if (a * points[i].first + b != points[i].second) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 template<typename FF>
 std::string Polynomial<FF>::to_string() const {
@@ -425,5 +471,47 @@ template<typename FF>
 Polynomial<FF> Polynomial<FF>::into_owned() const {
     return Polynomial<FF>(coeffs);
 }
+
+// Explicit instantiations
+template class Polynomial<BFieldElement>;
+template class Polynomial<XFieldElement>;
+
+// Explicit instantiations for are_colinear_3 and are_colinear
+template bool Polynomial<BFieldElement>::are_colinear_3(std::pair<BFieldElement,BFieldElement>, std::pair<BFieldElement,BFieldElement>, std::pair<BFieldElement,BFieldElement>);
+template bool Polynomial<BFieldElement>::are_colinear(const std::vector<std::pair<BFieldElement,BFieldElement>>&);
+template bool Polynomial<XFieldElement>::are_colinear_3(std::pair<XFieldElement,XFieldElement>, std::pair<XFieldElement,XFieldElement>, std::pair<XFieldElement,XFieldElement>);
+template bool Polynomial<XFieldElement>::are_colinear(const std::vector<std::pair<XFieldElement,XFieldElement>>&);
+
+// Explicit instantiations of evaluate method
+template XFieldElement Polynomial<BFieldElement>::evaluate<XFieldElement>(const XFieldElement&) const;
+
+// Explicit instantiations of operator==
+template bool Polynomial<BFieldElement>::operator==<BFieldElement>(const Polynomial<BFieldElement>& other) const;
+template bool Polynomial<XFieldElement>::operator==<BFieldElement>(const Polynomial<BFieldElement>& other) const;
+template bool Polynomial<BFieldElement>::operator==<XFieldElement>(const Polynomial<XFieldElement>& other) const;
+template bool Polynomial<XFieldElement>::operator==<XFieldElement>(const Polynomial<XFieldElement>& other) const;
+
+// Explicit instantiations for free-standing operator*
+template Polynomial<BFieldElement> operator*(const BFieldElement& scalar, const Polynomial<BFieldElement>& poly);
+template Polynomial<BFieldElement> operator*(const Polynomial<BFieldElement>& poly, const BFieldElement& scalar);
+template Polynomial<XFieldElement> operator*(const XFieldElement& scalar, const Polynomial<XFieldElement>& poly);
+template Polynomial<XFieldElement> operator*(const Polynomial<XFieldElement>& poly, const XFieldElement& scalar);
+
+// Explicit instantiations of scale method
+template Polynomial<BFieldElement> Polynomial<BFieldElement>::scale<BFieldElement>(const BFieldElement&) const;
+template Polynomial<BFieldElement> Polynomial<BFieldElement>::scale<XFieldElement>(const XFieldElement&) const;
+template Polynomial<XFieldElement> Polynomial<XFieldElement>::scale<BFieldElement>(const BFieldElement&) const;
+template Polynomial<XFieldElement> Polynomial<XFieldElement>::scale<XFieldElement>(const XFieldElement&) const;
+
+// Explicit instantiations of scalar_mul_mut method
+template void Polynomial<BFieldElement>::scalar_mul_mut<BFieldElement>(const BFieldElement&);
+template void Polynomial<BFieldElement>::scalar_mul_mut<XFieldElement>(const XFieldElement&);
+template void Polynomial<XFieldElement>::scalar_mul_mut<BFieldElement>(const BFieldElement&);
+template void Polynomial<XFieldElement>::scalar_mul_mut<XFieldElement>(const XFieldElement&);
+
+// Explicit instantiations of to_string method
+template std::string Polynomial<BFieldElement>::to_string() const;
+template std::string Polynomial<XFieldElement>::to_string() const;
+
 
 } // namespace tip5xx

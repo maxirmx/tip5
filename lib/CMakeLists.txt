@@ -23,6 +23,7 @@
 add_library(tip5xx
     "include/tip5xx/b_field_element.hpp"
     "include/tip5xx/b_field_element_error.hpp"
+    "include/tip5xx/digest.hpp"
     "include/tip5xx/ntt.hpp"
     "include/tip5xx/polynomial.hpp"
     "include/tip5xx/tip5xx.hpp"
@@ -31,6 +32,7 @@ add_library(tip5xx
     "include/tip5xx/zerofier_tree.hpp"
     "src/b_field_element.cpp"
     "src/b_field_element_error.cpp"
+    "src/digest.cpp"
     "src/ntt.cpp"
     "src/polynomial.cpp"
     "src/tip5xx.cpp"

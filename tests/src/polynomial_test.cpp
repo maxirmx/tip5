@@ -200,17 +200,3 @@ TEST(PolynomialTest, ScalingEquivalentInExtensionField) {
 
     EXPECT_EQ(xfe_poly_bfe_scalar, bfe_poly_xfe_scalar);
 }
-/*
-TEST(PolynomialTest, ScalarMultiplicationMethodsEquivalent) {
-    vector<BFieldElement> coeffs = {bfe_from(1), bfe_from(2), bfe_from(3)};
-    Polynomial<BFieldElement> poly(coeffs);
-    BFieldElement scalar = bfe_from(42);
-
-    auto scalar_mul_result = poly * scalar;
-
-    auto mut_poly = poly;
-    mut_poly.scalar_mul_mut(scalar);
-
-    EXPECT_EQ(mut_poly, scalar_mul_result);
-}
-*/
