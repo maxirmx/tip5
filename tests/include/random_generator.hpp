@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <random>
 #include <vector>
 #include "tip5xx/b_field_element.hpp"

@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include "tip5xx/tip5xx_error.hpp"
+#include <cstdint>
 #include <sstream>
+#include "tip5xx/tip5xx_error.hpp"
 
 namespace tip5xx {
 

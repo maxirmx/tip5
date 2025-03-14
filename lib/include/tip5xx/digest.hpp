@@ -23,11 +23,12 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
+#include <iomanip>
+#include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <iomanip>
-#include <sstream>
-#include <optional>
 #include "tip5xx/b_field_element.hpp"
 
 namespace tip5xx {

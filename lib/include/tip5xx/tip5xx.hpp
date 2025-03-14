@@ -116,8 +116,6 @@ public:
     // Hash functions
     static std::array<BFieldElement, Digest::LEN> hash_10(const std::array<BFieldElement, RATE>& input);
     static Digest hash_pair(const Digest& left, const Digest& right);
-    template<typename T>
-    static Digest hash(const T& value);
     static Digest hash_varlen(const std::vector<BFieldElement>& input);
 
     // Sampling functions
@@ -132,22 +130,6 @@ private:
     void round(size_t round_index);
     static void split_and_lookup(BFieldElement& element);
 
-    // Matrix multiply implementations
-    static std::array<int64_t, 16> fast_cyclomul16(const std::array<int64_t, 16>& f,
-                                                  const std::array<int64_t, 16>& g);
-    static std::array<int64_t, 8> fast_cyclomul8(const std::array<int64_t, 8>& f,
-                                                const std::array<int64_t, 8>& g);
-    static std::array<int64_t, 4> fast_cyclomul4(const std::array<int64_t, 4>& f,
-                                                const std::array<int64_t, 4>& g);
-    static std::array<int64_t, 2> fast_cyclomul2(const std::array<int64_t, 2>& f,
-                                                const std::array<int64_t, 2>& g);
-
-    static std::array<int64_t, 8> complex_negacyclomul8(const std::array<int64_t, 8>& f,
-                                                       const std::array<int64_t, 8>& g);
-    static std::array<int64_t, 4> complex_negacyclomul4(const std::array<int64_t, 4>& f,
-                                                       const std::array<int64_t, 4>& g);
-    static std::array<int64_t, 2> complex_negacyclomul2(const std::array<int64_t, 2>& f,
-                                                       const std::array<int64_t, 2>& g);
 };
 
 } // namespace tip5xx

@@ -23,7 +23,7 @@
 #pragma once
 
 #include <array>
-#include <iterator>
+#include <cstdint>
 
 namespace tip5xx {
 

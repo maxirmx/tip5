@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include <vector>
 #include <cassert>
 #include <cstdint>
+#include <vector>
 
 // Base trait for types that can generate cyclic group elements
 template <typename Derived>

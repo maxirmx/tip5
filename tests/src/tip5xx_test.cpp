@@ -229,6 +229,34 @@ TEST_F(Tip5Test, SampleScalarsTest) {
     EXPECT_NE(product, BFieldElement::zero());
 }
 
+TEST_F(Tip5Test, HashPairTest) {
+    // Create two random digests
+    auto elements1 = rng.random_elements(Digest::LEN);
+    auto elements2 = rng.random_elements(Digest::LEN);
+
+    std::array<BFieldElement, Digest::LEN> arr1, arr2;
+    std::copy_n(elements1.begin(), Digest::LEN, arr1.begin());
+    std::copy_n(elements2.begin(), Digest::LEN, arr2.begin());
+
+    Digest left(arr1);
+    Digest right(arr2);
+
+    auto result = Tip5::hash_pair(left, right);
+
+    // Manual calculation for verification
+    Tip5 sponge(Domain::FixedLength);
+    std::copy_n(left.values().begin(), Digest::LEN, sponge.state.begin());
+    std::copy_n(right.values().begin(), Digest::LEN, sponge.state.begin() + Digest::LEN);
+
+    sponge.permutation();
+
+    std::array<BFieldElement, Digest::LEN> expected;
+    std::copy_n(sponge.state.begin(), Digest::LEN, expected.begin());
+    Digest expected_digest(expected);
+
+    EXPECT_EQ(result, expected_digest);
+}
+
 TEST_F(Tip5Test, HashVarLenEquivalenceCornerCases) {
     // Test different corner cases of input lengths
     for (size_t preimage_length = 0; preimage_length <= 11; preimage_length++) {
@@ -270,4 +298,117 @@ TEST_F(Tip5Test, HashVarLenEquivalenceCornerCases) {
 
         EXPECT_EQ(manual_digest, hash_varlen_digest);
     }
+}
+
+TEST_F(Tip5Test, TraceMethodProducesDifferentStatesAcrossRounds) {
+    // Create a sponge with fixed-length domain.
+    Tip5 sponge(Domain::FixedLength);
+
+    // Initialize the state to a known value:
+    std::array<BFieldElement, STATE_SIZE> init_state;
+    for (size_t i = 0; i < STATE_SIZE; i++) {
+        init_state[i] = BFieldElement::from_raw_u64(i + 10); // Use distinct starting values
+    }
+    sponge.state = std::move(init_state);
+
+    // Capture the trace across rounds.
+    auto trace = sponge.trace();
+    ASSERT_EQ(trace.size(), NUM_ROUNDS + 1);
+
+    // Verify that the state changes from one round to next.
+    for (size_t r = 0; r < trace.size() - 1; r++) {
+        bool changed = false;
+        for (size_t i = 0; i < STATE_SIZE; i++) {
+            if (trace[r][i].value() != trace[r + 1][i].value()) {
+                changed = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(changed) << "State did not change after round " << r;
+    }
+}
+
+// Test that squeeze returns the exact first RATE elements of state before updating.
+TEST_F(Tip5Test, SqueezeReturnsCorrectInitialOutput) {
+    Tip5 sponge(Domain::FixedLength);
+
+    // Set a known state. For simplicity, fill the first RATE elements with distinct values.
+    for (size_t i = 0; i < RATE; i++) {
+        sponge.state[i] = BFieldElement::from_raw_u64(i + 1);
+    }
+    // For remaining state positions, assign a constant value (or different values if desired).
+    for (size_t i = RATE; i < STATE_SIZE; i++) {
+        sponge.state[i] = BFieldElement::one();
+    }
+
+    // Copy expected output from the initial state (first RATE elements)
+    std::array<BFieldElement, RATE> expected;
+    std::copy(sponge.state.begin(), sponge.state.begin() + RATE, expected.begin());
+
+    // Call squeeze, which should return the first RATE elements, then update the state.
+    std::array<BFieldElement, RATE> output = sponge.squeeze();
+
+    // Verify that the output matches the expected values.
+    for (size_t i = 0; i < RATE; i++) {
+        EXPECT_EQ(output[i], expected[i]) << "Mismatch at index " << i;
+    }
+}
+
+// Test that consecutive calls to squeeze produce different outputs,
+// demonstrating that the internal state is being permuted.
+TEST_F(Tip5Test, SqueezeMultipleCallsProduceDifferentOutput) {
+    Tip5 sponge(Domain::FixedLength);
+
+    // Initialize state with distinct values.
+    for (size_t i = 0; i < STATE_SIZE; i++) {
+        sponge.state[i] = BFieldElement::from_raw_u64(i + 100);
+    }
+
+    // First squeeze
+    std::array<BFieldElement, RATE> squeeze1 = sponge.squeeze();
+
+    // Second squeeze: state has been permuted, so result should differ.
+    std::array<BFieldElement, RATE> squeeze2 = sponge.squeeze();
+
+    bool outputsDiffer = false;
+    for (size_t i = 0; i < RATE; i++) {
+        if (squeeze1[i] != squeeze2[i]) {
+            outputsDiffer = true;
+            break;
+        }
+    }
+
+    EXPECT_TRUE(outputsDiffer) << "Consecutive squeezes yielded identical output, state did not change.";
+}
+
+TEST_F(Tip5Test, ReturnsRequestedNumberAndCallsPermutation) {
+    // Create a sponge in fixed-length domain.
+    Tip5 sponge(Domain::FixedLength);
+
+    // For this test, we want to ensure that not every element of state produces a candidate.
+    // The sample_indices function only pushes an index if the element is not equal to BFieldElement::MAX.
+    // Here we simulate that by manually setting half the state elements to BFieldElement::MAX.
+    // (Assuming BFieldElement::MAX is defined; if not, use a value that represents an "unused" element.)
+    for (size_t i = 0; i < sponge.state.size(); i++) {
+        if ((i % 2) == 0)
+            sponge.state[i] = BFieldElement::MAX;  // Unusable value
+        else
+            sponge.state[i] = BFieldElement::from_raw_u64(i + 100);  // Usable value
+    }
+
+    // Request a sample of indices.
+    // Since only half of state elements yield a candidate, one iteration over the state
+    // will not be enough to produce, say, 10 indices. Thus, permutation() should be called.
+    uint32_t upper_bound = 1000;
+    size_t requested = 10;
+    auto indices = sponge.sample_indices(upper_bound, requested);
+
+    // Check that we got exactly the requested number of indices.
+    EXPECT_EQ(indices.size(), requested);
+
+    // And that all produced indices are within the correct upper bound.
+    for (auto idx : indices) {
+        EXPECT_LT(idx, upper_bound);
+    }
+
 }

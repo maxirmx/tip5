@@ -45,89 +45,6 @@ void Tip5::sbox_layer() {
     }
 }
 
-std::array<int64_t, 2> Tip5::fast_cyclomul2(const std::array<int64_t, 2>& f, const std::array<int64_t, 2>& g) {
-    int64_t ff_lo = f[0] + f[1];
-    int64_t ff_hi = f[0] - f[1];
-    int64_t gg_lo = g[0] + g[1];
-    int64_t gg_hi = g[0] - g[1];
-
-    int64_t hh_lo = ff_lo * gg_lo;
-    int64_t hh_hi = ff_hi * gg_hi;
-
-    return {(hh_lo + hh_hi) >> 1, (hh_lo - hh_hi) >> 1};
-}
-
-std::array<int64_t, 2> Tip5::complex_negacyclomul2(const std::array<int64_t, 2>& f, const std::array<int64_t, 2>& g) {
-    auto f0 = std::make_pair(f[0], -f[1]);
-    auto g0 = std::make_pair(g[0], -g[1]);
-
-    auto h0 = std::make_pair(f0.first * g0.first - f0.second * g0.second,
-                            f0.first * g0.second + f0.second * g0.first);
-
-    return {h0.first, -h0.second};
-}
-
-std::array<int64_t, 4> Tip5::fast_cyclomul4(const std::array<int64_t, 4>& f, const std::array<int64_t, 4>& g) {
-    constexpr size_t N = 2;
-    std::array<int64_t, N> ff_lo{}, gg_lo{}, ff_hi{}, gg_hi{};
-
-    for (size_t i = 0; i < N; i++) {
-        ff_lo[i] = f[i] + f[i + N];
-        ff_hi[i] = f[i] - f[i + N];
-        gg_lo[i] = g[i] + g[i + N];
-        gg_hi[i] = g[i] - g[i + N];
-    }
-
-    auto hh_lo = fast_cyclomul2(ff_lo, gg_lo);
-    auto hh_hi = complex_negacyclomul2(ff_hi, gg_hi);
-
-    std::array<int64_t, 2 * N> hh{};
-    for (size_t i = 0; i < N; i++) {
-        hh[i] = (hh_lo[i] + hh_hi[i]) >> 1;
-        hh[i + N] = (hh_lo[i] - hh_hi[i]) >> 1;
-    }
-
-    return hh;
-}
-
-std::array<int64_t, 4> Tip5::complex_negacyclomul4(const std::array<int64_t, 4>& f, const std::array<int64_t, 4>& g) {
-    constexpr size_t N = 2;
-    std::array<std::pair<int64_t, int64_t>, N> f0{}, g0{};
-
-    for (size_t i = 0; i < N; i++) {
-        f0[i] = {f[i], -f[N + i]};
-        g0[i] = {g[i], -g[N + i]};
-    }
-
-    auto h0 = std::array<std::pair<int64_t, int64_t>, 3>{};
-    // Complex karatsuba multiplication
-    auto ff = std::make_pair(f0[0].first + f0[1].first, f0[0].second + f0[1].second);
-    auto gg = std::make_pair(g0[0].first + g0[1].first, g0[0].second + g0[1].second);
-
-    auto lo = std::make_pair(f0[0].first * g0[0].first - f0[0].second * g0[0].second,
-                            f0[0].first * g0[0].second + f0[0].second * g0[0].first);
-    auto hi = std::make_pair(f0[1].first * g0[1].first - f0[1].second * g0[1].second,
-                            f0[1].first * g0[1].second + f0[1].second * g0[1].first);
-
-    auto ff_times_gg = std::make_pair(ff.first * gg.first - ff.second * gg.second,
-                                     ff.first * gg.second + ff.second * gg.first);
-    auto lo_plus_hi = std::make_pair(lo.first + hi.first, lo.second + hi.second);
-
-    auto li = std::make_pair(ff_times_gg.first - lo_plus_hi.first,
-                            ff_times_gg.second - lo_plus_hi.second);
-
-    std::array<int64_t, 4> result{};
-    result[0] = lo.first;
-    result[N] = li.first;
-    result[2 * N] = hi.first;
-
-    for (size_t i = 0; i < 2 * N; i++) {
-        result[i - 2 * N] -= result[i];
-    }
-
-    return result;
-}
-
 void Tip5::mds_generated() {
     std::array<uint64_t, STATE_SIZE> lo{}, hi{};
 
@@ -238,12 +155,6 @@ Digest Tip5::hash_pair(const Digest& left, const Digest& right) {
     }
 
     return Digest(result);
-}
-
-template<typename T>
-Digest Tip5::hash(const T& value) {
-    // Assuming T implements encode() method returning vector<BFieldElement>
-    return hash_varlen(value.encode());
 }
 
 Digest Tip5::hash_varlen(const std::vector<BFieldElement>& input) {
