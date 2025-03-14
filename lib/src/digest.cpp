@@ -172,7 +172,7 @@ std::optional<Digest> Digest::from_bytes(const std::array<uint8_t, BYTES>& bytes
 
 BFieldElement Digest::try_bfe_from_hex(const std::string& hex_str) {
     if (hex_str.length() != 16) {
-        throw std::runtime_error("Invalid hex string length");
+        throw TryFromHexDigestError(TryFromHexDigestError::ErrorType::Digest, "Invalid hex string length");
     }
     uint64_t value = std::stoull(hex_str, nullptr, 16);
     return BFieldElement::new_element(value);
@@ -180,7 +180,7 @@ BFieldElement Digest::try_bfe_from_hex(const std::string& hex_str) {
 
 Digest Digest::try_from_hex(const std::string& hex_str) {
     if (hex_str.length() != BYTES * 2) {
-        throw std::runtime_error("Invalid hex string length");
+        throw TryFromHexDigestError(TryFromHexDigestError::ErrorType::Digest, "Invalid hex string length");
     }
 
     std::array<BFieldElement, LEN> elements;
@@ -203,13 +203,13 @@ Digest digest_from_string(const std::string& str) {
 
     while (std::getline(ss, item, ',')) {
         if (i >= Digest::LEN) {
-            throw std::runtime_error("Too many elements in string");
+            throw TryFromDigestError(TryFromDigestError::ErrorType::InvalidLength, "Too many elements in string");
         }
         elements[i++] = bfe_from_string(item);
     }
 
     if (i != Digest::LEN) {
-        throw std::runtime_error("Not enough elements in string");
+        throw TryFromDigestError(TryFromDigestError::ErrorType::InvalidLength, "Not enough elements in string");
     }
 
     return Digest(elements);

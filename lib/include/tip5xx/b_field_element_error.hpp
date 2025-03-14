@@ -90,26 +90,6 @@ public:
     TryFromU32sError() : BFieldElementError("U32s<N>: `N` not big enough to hold the value") {}
 };
 
-
-// TryFromXFieldElementError
-class TryFromXFieldElementError : public BFieldElementError {
-public:
-    enum class ErrorType {
-        InvalidLength,
-        InvalidDigest
-    };
-
-    TryFromXFieldElementError(ErrorType type, const std::string& detail = "")
-        : BFieldElementError(build_message(type, detail)), type_(type) {}
-
-    ErrorType type() const { return type_; }
-
-private:
-    ErrorType type_;
-
-    static std::string build_message(ErrorType type, const std::string& detail);
-};
-
 // TryFromDigestError
 class TryFromDigestError : public BFieldElementError {
 public:

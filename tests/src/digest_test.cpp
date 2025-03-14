@@ -80,6 +80,240 @@ TEST_F(DigestTest, ConstructorWithArray) {
     }
 }
 
+// Extended test for comparison operators
+TEST_F(DigestTest, ComparisonOperatorsComprehensive) {
+    // Test cases for equality and inequality
+    {
+        // Same values
+        Digest a = createSequentialDigest(1);
+        Digest b = createSequentialDigest(1);
+        EXPECT_TRUE(a == b);
+        EXPECT_FALSE(a != b);
+
+        // Different values
+        Digest c = createSequentialDigest(2);
+        EXPECT_FALSE(a == c);
+        EXPECT_TRUE(a != c);
+
+        // Self comparison
+        EXPECT_TRUE(a == a);
+        EXPECT_FALSE(a != a);
+    }
+
+    // Test cases for less than and greater than
+    {
+        // Test all comparison operators with elements differing in the first position
+        Digest a = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5)
+        });
+
+        Digest b = Digest({
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5)
+        });
+
+        EXPECT_TRUE(a < b);
+        EXPECT_FALSE(b < a);
+        EXPECT_TRUE(a <= b);
+        EXPECT_FALSE(b <= a);
+        EXPECT_FALSE(a > b);
+        EXPECT_TRUE(b > a);
+        EXPECT_FALSE(a >= b);
+        EXPECT_TRUE(b >= a);
+    }
+
+    // Test cases for less than or equal and greater than or equal
+    {
+        // Equal digests
+        Digest a = createSequentialDigest(5);
+        Digest b = createSequentialDigest(5);
+
+        EXPECT_TRUE(a <= b);
+        EXPECT_TRUE(b <= a);
+        EXPECT_TRUE(a >= b);
+        EXPECT_TRUE(b >= a);
+
+        // Unequal digests
+        Digest c = createSequentialDigest(10);
+
+        EXPECT_TRUE(a <= c);
+        EXPECT_FALSE(c <= a);
+        EXPECT_FALSE(a >= c);
+        EXPECT_TRUE(c >= a);
+    }
+
+    // Test comparison with elements differing at different positions
+    {
+        // Test with difference in last position
+        Digest a = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5)
+        });
+
+        Digest b = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(6)
+        });
+
+        EXPECT_TRUE(a < b);
+        EXPECT_FALSE(b < a);
+
+        // Test with difference in middle position
+        Digest c = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(4), // Different here
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5)
+        });
+
+        EXPECT_TRUE(a < c);
+        EXPECT_FALSE(c < a);
+
+        // Test with difference in first position
+        Digest d = Digest({
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5)
+        });
+
+        EXPECT_TRUE(a < d);
+        EXPECT_FALSE(d < a);
+
+        // Test with differences in multiple positions
+        Digest e = Digest({
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5),
+            BFieldElement::new_element(6)
+        });
+
+        EXPECT_TRUE(a < e);
+        EXPECT_FALSE(e < a);
+    }
+
+    // Test the behavior of reverse comparisons
+    // In your implementation, the most significant element is the LAST one
+    // So we need to test that the comparison works correctly
+    {
+        // Digests that differ only in the last (most significant) position
+        Digest a = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5)
+        });
+
+        Digest b = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(6) // Last element is most significant
+        });
+
+        EXPECT_TRUE(a < b);
+        EXPECT_FALSE(b < a);
+        EXPECT_TRUE(a <= b);
+        EXPECT_FALSE(b <= a);
+        EXPECT_FALSE(a > b);
+        EXPECT_TRUE(b > a);
+        EXPECT_FALSE(a >= b);
+        EXPECT_TRUE(b >= a);
+
+        // Now create digests where earlier positions differ but last position is the same
+        // This should be dominated by the last position
+        Digest c = Digest({
+            BFieldElement::new_element(100),
+            BFieldElement::new_element(100),
+            BFieldElement::new_element(100),
+            BFieldElement::new_element(100),
+            BFieldElement::new_element(5)
+        });
+
+        EXPECT_TRUE(a < c);
+        EXPECT_FALSE(c < a);
+        EXPECT_TRUE(a <= c);
+        EXPECT_FALSE(c <= a);
+        EXPECT_FALSE(a > c);
+        EXPECT_TRUE(c > a);
+        EXPECT_FALSE(a >= c);
+        EXPECT_TRUE(c >= a);
+
+        // But if we change the last position, it should dominate
+        Digest d = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(6)
+        });
+
+        EXPECT_TRUE(c < d);
+        EXPECT_FALSE(d < c);
+    }
+
+    // Test edge cases with maximum and minimum values
+    {
+        // Create a digest with minimum values
+        Digest min_digest = createUniformDigest(0);
+
+        // Create a digest with maximum values
+        Digest max_digest = createUniformDigest(BFieldElement::MAX_VALUE - 1);
+
+        // Test extremes
+        EXPECT_TRUE(min_digest < max_digest);
+        EXPECT_FALSE(max_digest < min_digest);
+        EXPECT_TRUE(min_digest <= max_digest);
+        EXPECT_FALSE(max_digest <= min_digest);
+        EXPECT_FALSE(min_digest > max_digest);
+        EXPECT_TRUE(max_digest > min_digest);
+        EXPECT_FALSE(min_digest >= max_digest);
+        EXPECT_TRUE(max_digest >= min_digest);
+    }
+
+    // Test mixed comparison patterns
+    {
+        // Create digests with mixed patterns to test comparison logic
+        Digest a = Digest({
+            BFieldElement::new_element(5),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(1)
+        });
+
+        Digest b = Digest({
+            BFieldElement::new_element(1),
+            BFieldElement::new_element(2),
+            BFieldElement::new_element(3),
+            BFieldElement::new_element(4),
+            BFieldElement::new_element(5)
+        });
+
+        // Here, the last element of b is greater than the last element of a
+        EXPECT_TRUE(a < b);
+        EXPECT_FALSE(b < a);
+    }
+}
+
 // Test reversing a digest
 TEST_F(DigestTest, Reversed) {
     Digest original = createSequentialDigest();
@@ -140,6 +374,31 @@ TEST_F(DigestTest, ComparisonOperators) {
     EXPECT_GT(val4, val2);
     EXPECT_GT(val4, val1);
     EXPECT_GT(val4, val0);
+}
+
+// Test comparison operators (equals)
+TEST_F(DigestTest, ComparisonOperatorsEq) {
+
+    Digest val1 = Digest({
+        BFieldElement::new_element(14),
+        BFieldElement::new_element(15),
+        BFieldElement::new_element(14),
+        BFieldElement::new_element(14),
+        BFieldElement::new_element(14)
+    });
+
+    Digest val2 = Digest({
+        BFieldElement::new_element(14),
+        BFieldElement::new_element(15),
+        BFieldElement::new_element(14),
+        BFieldElement::new_element(14),
+        BFieldElement::new_element(14)
+    });
+
+    EXPECT_TRUE(val1 >= val2);
+    EXPECT_TRUE(val1 <= val2);
+    EXPECT_TRUE(val1 == val2);
+    EXPECT_FALSE(val1 != val2);
 }
 
 // Test string representation

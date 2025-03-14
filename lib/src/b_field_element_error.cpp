@@ -44,19 +44,6 @@ std::string ParseBFieldElementError::build_message(ErrorType type, const std::st
     return oss.str();
 }
 
-std::string TryFromXFieldElementError::build_message(ErrorType type, const std::string& detail) {
-    std::ostringstream oss;
-    switch (type) {
-        case ErrorType::InvalidLength:
-            oss << "expected " << EXTENSION_DEGREE << " elements for extension field element, but got " << detail;
-            break;
-        case ErrorType::InvalidDigest:
-            oss << "Digest is not an XFieldElement";
-            break;
-    }
-    return oss.str();
-}
-
 std::string TryFromDigestError::build_message(ErrorType type, const std::string& detail) {
     std::ostringstream oss;
     switch (type) {
