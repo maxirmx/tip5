@@ -92,20 +92,19 @@ jobs:
           echo "EXE=" >> $GITHUB_ENV
         fi
 
-#    - name: Sample App Tests
-#      working-directory: build/samples/tip5-cpp
-#      shell: bash
-#      run: |
-#        # Test pair mode with different formats
-#        ./${CONFIG}tip5xx_sample${EXE} 0x1EADB75F 0xC7FEBAB9  # hexadecimal
-#        ./${CONFIG}tip5xx_sample${EXE} 16909060 84281096  # decimal
-#        ./${CONFIG}tip5xx_sample${EXE} 0100402404 0502060710  # octal
+    - name: Run C++ Sample
+      working-directory: build/samples/tip5-cpp
+      shell: bash
+      run: |
+        # Test pair mode with different formats
+        ./${CONFIG}tip5${EXE} "(0x1,0x2,0x3,0x4,0x5)" "(0x6,0x7,0x8,0x9,0xaa)"
 
         # Test varlen mode with mixed formats
-#        ./${CONFIG}tip5xx_sample${EXE} -m varlen 0x1EADB75F 16909060 0502060710
+        ./${CONFIG}tip5${EXE} -m varlen "(1,2,3,4,5)" "(6,0x7,8,9,0xAA)"
+        ./${CONFIG}tip5${EXE} -m varlen "(1,2,3,4,5)" "(6,0x7,8,9,10)" "(11,0xc,0xD,14,15)"
 
         # Test help
-#        ./${CONFIG}tip5xx_sample${EXE} --help
+        ./${CONFIG}tip5${EXE} --help
 
     - name: Setup Rust
       if: matrix.env.rust
@@ -113,19 +112,24 @@ jobs:
       with:
         toolchain: 1.85.0
 
-    - name: Build and Test Rust Sample
+    - name: Build Rust Sample
+      if: matrix.env.rust
+      working-directory: samples/tip5-rust
+      run: |
+        cargo build
+
+    - name: Run Rust Sample
       if: matrix.env.rust
       working-directory: samples/tip5-rust
       run: |
         cargo build
 
         # Test pair mode with different formats
-        cargo run -- 0x1EADB75F 0xC7FEBAB9
-        cargo run -- 16909060 84281096
-        cargo run -- 0100402404 0502060710
+        cargo run -- "(1,2,0x3,4,5)" "(6,7,8,9,0xAA)"
 
         # Test varlen mode with mixed formats
-        cargo run -- -m varlen 0x1EADB75F 16909060 0502060710
+        cargo run -- -m varlen "(1,2,3,4,5)" "(6,7,8,9,0xAA)"
+        cargo run -- -m varlen "(1,2,3,4,5)" "(6,7,8,9,10)" "(11,12,13,0xE,15)"
 
         # Test help
         cargo run -- --help
@@ -145,6 +149,6 @@ jobs:
         verbose: true
         files: |
           ${{github.workspace}}/build/CMakeFiles/tip5xx.dir/src/*.gc*
-          ${{github.workspace}}/build/samples/tip5-cpp/CMakeFiles/tip5xx_sample.dir/src/*.gc*
+          ${{github.workspace}}/build/samples/tip5-cpp/CMakeFiles/tip5.dir/src/*.gc*
           ${{github.workspace}}/lib/include/tip5xx/*.hpp
         directory: ${{github.workspace}}/build

@@ -21,7 +21,7 @@
 # This file is a part of tip5xx library
 
 [package]
-name = "tip5-rust"
+name = "tip5"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"

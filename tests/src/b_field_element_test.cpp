@@ -1163,38 +1163,38 @@ TEST(BFieldElementTest, StreamInputOperator) {
 }
 
 // Test BFieldElement::to_string() method
-TEST(BFieldElementTest, ToString) {
+TEST(BFieldElementTest, Display) {
     // Test small positive values (≤ 256)
-    EXPECT_EQ("0", BFieldElement::ZERO.to_string());
-    EXPECT_EQ("1", BFieldElement::ONE.to_string());
-    EXPECT_EQ("42", BFieldElement::new_element(42).to_string());
-    EXPECT_EQ("256", BFieldElement::new_element(256).to_string());
+    EXPECT_EQ("0", BFieldElement::ZERO.display());
+    EXPECT_EQ("1", BFieldElement::ONE.display());
+    EXPECT_EQ("42", BFieldElement::new_element(42).display());
+    EXPECT_EQ("256", BFieldElement::new_element(256).display());
 
     // Test negative values (values close to P)
-    EXPECT_EQ("-1", BFieldElement::new_element(BFieldElement::MAX_VALUE).to_string());
-    EXPECT_EQ("-42", BFieldElement::new_element(BFieldElement::P - 42).to_string());
-    EXPECT_EQ("-256", BFieldElement::new_element(BFieldElement::P - 256).to_string());
+    EXPECT_EQ("-1", BFieldElement::new_element(BFieldElement::MAX_VALUE).display());
+    EXPECT_EQ("-42", BFieldElement::new_element(BFieldElement::P - 42).display());
+    EXPECT_EQ("-256", BFieldElement::new_element(BFieldElement::P - 256).display());
 
     // Test boundary cases
     BFieldElement just_above_cutoff = BFieldElement::new_element(257);
     std::stringstream expected1;
-    expected1 << 257;
-    EXPECT_EQ(expected1.str(), just_above_cutoff.to_string());
+    expected1 << std::setfill('0') << std::setw(20) << 257;
+    EXPECT_EQ(expected1.str(), just_above_cutoff.display());
 
     BFieldElement just_below_neg_cutoff = BFieldElement::new_element(BFieldElement::P - 257);
     std::stringstream expected2;
     expected2 << (BFieldElement::P - 257);
-    EXPECT_EQ(expected2.str(), just_below_neg_cutoff.to_string());
+    EXPECT_EQ(expected2.str(), just_below_neg_cutoff.display());
 
     // Test mid-range values
     BFieldElement mid_range = BFieldElement::new_element(BFieldElement::P / 2);
     std::stringstream expected3;
-    expected3 << (BFieldElement::P / 2);
-    EXPECT_EQ(expected3.str(), mid_range.to_string());
+    expected3 << std::setfill('0') << std::setw(20) << (BFieldElement::P / 2);
+    EXPECT_EQ(expected3.str(), mid_range.display());
 
     // Test max value
     BFieldElement max_value = BFieldElement::MAX;
-    EXPECT_EQ("-1", max_value.to_string());
+    EXPECT_EQ("-1", max_value.display());
 }
 
 // Test handling of values exceeding uint64_t in bfe_from_string

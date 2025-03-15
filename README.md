@@ -5,6 +5,14 @@
 
 Tip5 hash (https://eprint.iacr.org/2023/107) implementation in C++
 
+## Всё просто :)
+
+- BField - целочисленное поле вычетов по модулю
+- BFieldElement - значение в BField
+- Digest - точка в пятимерном линейном пространстве, координаты в котором задаются значениями из BField
+- Tip5.hash_varlen - хэш функция Digest^N --> Digest ( то есть из N штук Digest вычисляется Digest, N > 1 )
+- Tip5.hash_pair - хэш функция Digest x Digest --> Digest ( то есть из двух Digest вычисляется Digest), но при этом не частный случай Tip5.hash_varlen при N = 2
+
 ## Requirements
 
 ### C++ Implementation
@@ -62,17 +70,26 @@ Both C++ and Rust implementations provide similar command-line interfaces suppor
 #### C++ Sample
 
 ```bash
+cd build/samples/tip5-cpp
+
 # Pair mode with different number formats
-./build/samples/tip5-cpp/tip5xx_sample 0x1EADB75F 0xC7FEBAB9     # hexadecimal (0x prefix)
-./build/samples/tip5-cpp/tip5xx_sample 16909060 84281096         # decimal
-./build/samples/tip5-cpp/tip5xx_sample 0100402404 0502060710     # octal (0 prefix)
+./tip5 "(0x1,0x2,0x3,0x4,0x5)" "(0x6,0x7,0x8,0x9,0xa)"     # hexadecimal
+./tip5 "(1,2,3,4,5)" "(6,7,8,9,10)"                         # decimal
 
 # Variable-length mode with mixed formats
-./build/samples/tip5-cpp/tip5xx_sample -m varlen 0x1EADB75F 16909060 0502060710
+./tip5 -m varlen "(1,2,3,4,5)" "(6,7,8,9,10)" "(11,12,13,14,15)"
 
 # Show help and options
-./build/samples/tip5-cpp/tip5xx_sample --help
+./tip5 --help
 ```
+
+Options for C++ implementation:
+- `-m, --mode <mode>`: Hashing mode ('pair' or 'varlen')
+  - `pair`: Takes exactly 2 digests (default mode)
+  - `varlen`: Takes 2 or more digests
+- Each digest must be in format (n1,n2,n3,n4,n5) where each number can be:
+  - Hexadecimal: Numbers with 0x prefix (e.g., 0x1F)
+  - Decimal: Plain numbers (e.g., 42)
 
 #### Rust Sample
 
@@ -80,25 +97,23 @@ Both C++ and Rust implementations provide similar command-line interfaces suppor
 cd samples/tip5-rust
 
 # Pair mode with different number formats
-cargo run -- 0x1EADB75F 0xC7FEBAB9          # hexadecimal (0x prefix)
-cargo run -- 16909060 84281096              # decimal
-cargo run -- 0100402404 0502060710          # octal (0 prefix)
+cargo run -- "(0x1,0x2,0x3,0x4,0x5)" "(0x6,0x7,0x8,0x9,0xa)"     # hexadecimal
+cargo run -- "(1,2,3,4,5)" "(6,7,8,9,10)"                         # decimal
 
 # Variable-length mode with mixed formats
-cargo run -- -m varlen 0x1EADB75F 16909060 0502060710
+cargo run -- -m varlen "(1,2,3,4,5)" "(6,7,8,9,10)" "(11,12,13,14,15)"
 
 # Show help and options
 cargo run -- --help
 ```
 
-Options for both implementations:
+Options for Rust implementation:
 - `-m, --mode <mode>`: Hashing mode ('pair' or 'varlen')
-  - `pair`: Takes exactly 2 numbers (default mode)
-  - `varlen`: Takes 2 or more numbers
-- Input values support multiple formats:
-  - Hexadecimal: Numbers with 0x prefix (e.g., 0x1EADB75F)
-  - Decimal: Plain numbers (e.g., 16909060)
-  - Octal: Numbers with leading 0 (e.g., 0100402404)
+  - `pair`: Takes exactly 2 digests (default mode)
+  - `varlen`: Takes 2 or more digests
+- Each digest must be in format (n1,n2,n3,n4,n5) where each number can be:
+  - Hexadecimal: Numbers with 0x prefix (e.g., 0x1F)
+  - Decimal: Plain numbers (e.g., 42)
 
 Note: Hex format requires the 0x prefix and even number of digits.
 

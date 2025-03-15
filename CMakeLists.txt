@@ -117,6 +117,6 @@ if(BUILD_TESTING)
 endif()
 
 # Samples
-#if(BUILD_SAMPLES)
-#    add_subdirectory(samples)
-#endif()
+if(BUILD_SAMPLES)
+    add_subdirectory(samples)
+endif()

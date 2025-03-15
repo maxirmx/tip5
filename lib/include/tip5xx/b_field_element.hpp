@@ -271,6 +271,7 @@ public:
 
     // Convert to string representation
     std::string to_string() const;
+    std::string display() const;
 
     std::array<uint8_t, 8> to_bytes() const;
     static BFieldElement from_bytes(const std::array<uint8_t, 8>& bytes);

@@ -31,68 +31,71 @@
 #include "tip5xx/tip5xx.hpp"
 #include <CLI/CLI.hpp>
 
-// Helper function to print hash result
-void print_hash(const std::vector<uint8_t>& hash) {
-    for (const auto& byte : hash) {
-        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
+// Helper function to print digest result
+void print_digest(const tip5xx::Digest& digest) {
+    std::cout << "Digest(";
+    for (size_t i = 0; i < tip5xx::Digest::LEN; ++i) {
+        if (i > 0) std::cout << ", ";
+        std::cout << digest[i];
     }
-    std::cout << std::endl;
+    std::cout << ")" << std::endl;
 }
 
-// Helper function to detect and convert number format
-std::vector<uint8_t> parse_number(const std::string& input) {
-    std::vector<uint8_t> bytes;
-    size_t pos = 0;
-    int base = 10; // default decimal
+// Helper function to parse a number in various formats
+tip5xx::BFieldElement parse_number(const std::string& input) {
+    std::string trimmed = input;
+    trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r\f\v"));
+    trimmed.erase(trimmed.find_last_not_of(" \t\n\r\f\v") + 1);
 
     try {
-        // Detect format
-        if (input.substr(0, 2) == "0x" || input.substr(0, 2) == "0X") {
-            pos = 2;
-            base = 16; // hex
-            // Handle hex format by byte pairs
-            for (size_t i = pos; i < input.length(); i += 2) {
-                if (i + 2 > input.length()) {
-                    throw std::runtime_error("Hex string length must be even (full bytes)");
-                }
-                std::string byteString = input.substr(i, 2);
-                uint8_t byte = static_cast<uint8_t>(std::stoi(byteString, nullptr, 16));
-                bytes.push_back(byte);
-            }
-        } else if (input.substr(0, 1) == "0") {
-            pos = 1;
-            base = 8;  // octal
-            // Handle decimal and octal as full numbers
-            unsigned long value = std::stoul(input.substr(pos), nullptr, base);
-            // Convert to bytes (little-endian)
-            while (value > 0) {
-                bytes.push_back(static_cast<uint8_t>(value & 0xFF));
-                value >>= 8;
-            }
-            if (bytes.empty()) {
-                bytes.push_back(0); // handle zero value
-            }
-            // Reverse to get big-endian
-            std::reverse(bytes.begin(), bytes.end());
+        if (trimmed.substr(0, 2) == "0x" || trimmed.substr(0, 2) == "0X") {
+            // Hexadecimal
+            uint64_t value = std::stoull(trimmed.substr(2), nullptr, 16);
+            return tip5xx::BFieldElement::new_element(value);
         } else {
             // Decimal
-            unsigned long value = std::stoul(input, nullptr, base);
-            // Convert to bytes (little-endian)
-            while (value > 0) {
-                bytes.push_back(static_cast<uint8_t>(value & 0xFF));
-                value >>= 8;
-            }
-            if (bytes.empty()) {
-                bytes.push_back(0); // handle zero value
-            }
-            // Reverse to get big-endian
-            std::reverse(bytes.begin(), bytes.end());
+            uint64_t value = std::stoull(trimmed, nullptr, 10);
+            return tip5xx::BFieldElement::new_element(value);
         }
     } catch (const std::exception& e) {
         throw std::runtime_error("Invalid number format: " + input);
     }
+}
 
-    return bytes;
+// Helper function to parse a digest in (n1,n2,n3,n4,n5) format
+tip5xx::Digest parse_digest(const std::string& input) {
+    // Remove whitespace
+    std::string str = input;
+    str.erase(0, str.find_first_not_of(" \t\n\r\f\v"));
+    str.erase(str.find_last_not_of(" \t\n\r\f\v") + 1);
+
+    // Check and remove parentheses
+    if (str.empty() || str[0] != '(' || str[str.length()-1] != ')') {
+        throw std::runtime_error("Digest must be enclosed in parentheses");
+    }
+    str = str.substr(1, str.length()-2);
+
+    // Split into numbers
+    std::vector<std::string> numbers;
+    size_t start = 0, end = 0;
+    while ((end = str.find(',', start)) != std::string::npos) {
+        numbers.push_back(str.substr(start, end - start));
+        start = end + 1;
+    }
+    numbers.push_back(str.substr(start));
+
+    // Validate number count
+    if (numbers.size() != 5) {
+        throw std::runtime_error("Each digest must contain exactly 5 numbers");
+    }
+
+    // Parse numbers and create digest
+    std::array<tip5xx::BFieldElement, 5> elements;
+    for (size_t i = 0; i < 5; ++i) {
+        elements[i] = parse_number(numbers[i]);
+    }
+
+    return tip5xx::Digest(elements);
 }
 
 int main(int argc, char** argv) {
@@ -103,40 +106,42 @@ int main(int argc, char** argv) {
     app.add_option("-m,--mode", mode, "Hash mode: 'pair' or 'varlen'")->check(CLI::IsMember({"pair", "varlen"}));
 
     std::vector<std::string> inputs;
-    app.add_option("inputs", inputs, "Input numbers")->required()
-       ->description("For pair mode: provide exactly 2 numbers\n"
-                    "For varlen mode: provide 2 or more numbers\n"
-                    "Supported formats:\n"
-                    "- Hexadecimal: 0x01020304 (must use 0x prefix)\n"
-                    "- Decimal: 16909060\n"
-                    "- Octal: 0100402404 (must use 0 prefix)");
+    app.add_option("inputs", inputs, "Input digests")->required()
+       ->description("For pair mode: provide exactly 2 digests\n"
+                    "For varlen mode: provide 2 or more digests\n"
+                    "Each digest must be in format (n1,n2,n3,n4,n5) where each number can be:\n"
+                    "- Hexadecimal: 0x1F (must use 0x prefix)\n"
+                    "- Decimal: 42 (numbers starting with 0 like 077 are treated as decimal)");
 
     CLI11_PARSE(app, argc, argv);
 
     try {
         if (mode == "pair") {
             if (inputs.size() != 2) {
-                std::cerr << "Error: pair mode requires exactly 2 inputs" << std::endl;
+                std::cerr << "Error: pair mode requires exactly 2 digests" << std::endl;
                 return 1;
             }
 
-            auto input1 = parse_number(inputs[0]);
-            auto input2 = parse_number(inputs[1]);
+            auto digest1 = parse_digest(inputs[0]);
+            auto digest2 = parse_digest(inputs[1]);
 
-            std::cout << "Hash pair mode [" << inputs[0] << ", " << inputs[1] << "]:" << std::endl;
-            auto pair_result = tip5xx::Tip5::hash_pair(input1, input2);
+            std::cout << "Hash pair mode Digest(" << inputs[0] << "), Digest(" << inputs[1] << ")" << std::endl;
+            auto pair_result = tip5xx::Tip5::hash_pair(digest1, digest2);
             std::cout << "Result: ";
-            print_hash(pair_result);
+            print_digest(pair_result);
         }
         else { // varlen mode
             if (inputs.size() < 2) {
-                std::cerr << "Error: varlen mode requires at least 2 inputs" << std::endl;
+                std::cerr << "Error: varlen mode requires at least 2 digests" << std::endl;
                 return 1;
             }
 
-            std::vector<std::vector<uint8_t>> byte_inputs;
+            std::vector<tip5xx::BFieldElement> elements;
             for (const auto& input : inputs) {
-                byte_inputs.push_back(parse_number(input));
+                auto digest = parse_digest(input);
+                for (size_t i = 0; i < tip5xx::Digest::LEN; ++i) {
+                    elements.push_back(digest[i]);
+                }
             }
 
             std::cout << "Hash varlen mode [";
@@ -145,9 +150,9 @@ int main(int argc, char** argv) {
                 if (i < inputs.size() - 1) std::cout << ", ";
             }
             std::cout << "]:" << std::endl;
-            auto varlen_result = tip5xx::Tip5::hash_varlen(byte_inputs);
+            auto varlen_result = tip5xx::Tip5::hash_varlen(elements);
             std::cout << "Result: ";
-            print_hash(varlen_result);
+            print_digest(varlen_result);
         }
 
         return 0;

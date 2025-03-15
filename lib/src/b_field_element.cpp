@@ -21,6 +21,7 @@
 // This file is a part of tip5xx library
 
 #include "tip5xx/b_field_element.hpp"
+#include <iomanip>
 
 namespace tip5xx {
 
@@ -296,11 +297,6 @@ BFieldElement BFieldElement::operator-() const {
     return ZERO - *this;
 }
 
-// Stream output operator
-std::ostream& operator<<(std::ostream& os, const BFieldElement& bfe) {
-    return os << bfe.to_string();
-}
-
 // Convert from string representation, handling both positive and negative values
 BFieldElement bfe_from_string(const std::string& s) {
     // Trim whitespace
@@ -429,16 +425,39 @@ std::istream& operator>>(std::istream& is, BFieldElement& bfe) {
 
 std::string BFieldElement::to_string() const {
     std::ostringstream ss;
-    uint64_t canonical_value = value();
+    ss << value();
+    return ss.str();
+}
+
+std::string BFieldElement::display() const {
+    std::ostringstream ss;
+    const uint64_t canonical_value = value();
     const uint64_t cutoff = 256;
 
+    // Same logic as Rust's Display implementation
     if (canonical_value >= BFieldElement::P - cutoff) {
-        ss << "-" << (BFieldElement::P - canonical_value);
-    } else {
+        // For values close to P, display as negative
+        ss << '-' << (BFieldElement::P - canonical_value);
+    } else if (canonical_value <= cutoff) {
+        // For small values, display directly
         ss << canonical_value;
+    } else {
+        // For other values, pad with zeros up to 20 characters
+        ss << std::setfill('0') << std::setw(20) << canonical_value;
     }
 
     return ss.str();
 }
+
+std::ostream& operator<<(std::ostream& os, const BFieldElement& bfe) {
+    return os << bfe.display();
+};
+
+// Stream output operator
+//std::ostream& operator<<(std::ostream& os, const BFieldElement& bfe) {
+//    return os << bfe.to_string();
+//}
+
+
 
 } // namespace tip5xx

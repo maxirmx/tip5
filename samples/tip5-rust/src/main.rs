@@ -41,32 +41,50 @@ struct Args {
     #[arg(short, long, value_enum, default_value_t = Mode::Pair)]
     mode: Mode,
 
-    /// Input numbers (hex with 0x prefix, decimal, or octal with 0 prefix)
-    #[arg(required = true, help = "Input numbers.\nFor pair mode: provide exactly 2 numbers\nFor varlen mode: provide 2 or more numbers\nSupported formats:\n- Hexadecimal: 0x01020304 (must use 0x prefix)\n- Decimal: 16909060\n- Octal: 0100402404 (must use 0 prefix)")]
+    /// Input digests in format (n1,n2,n3,n4,n5) for each digest
+    #[arg(required = true, help = "Input digests in format (n1,n2,n3,n4,n5).\nFor pair mode: provide exactly 2 digests\nFor varlen mode: provide 2 or more digests\nEach number can be in formats:\n- Hexadecimal: 0x01020304 (must use 0x prefix)\n- Decimal: 16909060 (numbers starting with 0 like 0123 are treated as decimal)")]
     inputs: Vec<String>,
 }
 
 fn parse_number(input: &str) -> Result<BFieldElement, Box<dyn Error>> {
-    let value = if input.starts_with("0x") || input.starts_with("0X") {
+    let trimmed = input.trim();
+    let value = if trimmed.starts_with("0x") || trimmed.starts_with("0X") {
         // Handle hex format
-        let hex_str = &input[2..];
-        if hex_str.len() % 2 != 0 {
-            return Err("Hex string length must be even (full bytes)".into());
-        }
+        let hex_str = &trimmed[2..];
         u64::from_str_radix(hex_str, 16)?
-    } else if input.starts_with('0') {
-        // Handle octal
-        let oct_str = &input[1..];
-        u64::from_str_radix(oct_str, 8)?
     } else {
         // Handle decimal
-        input.parse::<u64>()?
+        trimmed.parse::<u64>()?
     };
     Ok(BFieldElement::new(value))
 }
 
-fn print_hash(hash: &Digest) {
-    println!("{:?}", hash);
+fn parse_digest(input: &str) -> Result<Digest, Box<dyn Error>> {
+    // Remove outer parentheses and split by comma
+    let content = input.trim()
+        .strip_prefix('(')
+        .ok_or("Missing opening parenthesis")?
+        .strip_suffix(')')
+        .ok_or("Missing closing parenthesis")?;
+
+    let numbers: Vec<&str> = content.split(',').collect();
+    if numbers.len() != 5 {
+        return Err("Each digest must contain exactly 5 numbers".into());
+    }
+
+    let elements: Result<Vec<BFieldElement>, _> = numbers
+        .iter()
+        .map(|n| parse_number(n))
+        .collect();
+
+    let elements = elements?;
+    Ok(Digest::new([
+        elements[0],
+        elements[1],
+        elements[2],
+        elements[3],
+        elements[4],
+    ]))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -75,42 +93,40 @@ fn main() -> Result<(), Box<dyn Error>> {
     match args.mode {
         Mode::Pair => {
             if args.inputs.len() != 2 {
-                return Err("pair mode requires exactly 2 inputs".into());
+                return Err("pair mode requires exactly 2 digests".into());
             }
 
-            let input1 = parse_number(&args.inputs[0])?;
-            let input2 = parse_number(&args.inputs[1])?;
+            let digest1 = parse_digest(&args.inputs[0])?;
+            let digest2 = parse_digest(&args.inputs[1])?;
 
-            println!("Hash pair mode [{}, {}]:", args.inputs[0], args.inputs[1]);
-            let result = Tip5::hash_pair(
-                Digest::new([input1, BFieldElement::new(0), BFieldElement::new(0), BFieldElement::new(0), BFieldElement::new(0)]),
-                Digest::new([input2, BFieldElement::new(0), BFieldElement::new(0), BFieldElement::new(0), BFieldElement::new(0)])
-            );
+            println!("Hash pair mode Digest{}, Digest{}", args.inputs[0], args.inputs[1]);
+            let result = Tip5::hash_pair(digest1, digest2);
             print!("Result: ");
-            print_hash(&result);
+            println!("Digest({})", result.to_string());
         }
         Mode::Varlen => {
             if args.inputs.len() < 2 {
-                return Err("varlen mode requires at least 2 inputs".into());
+                return Err("varlen mode requires at least 2 digests".into());
             }
 
-            let mut inputs = Vec::new();
+            let mut digests = Vec::new();
             for input in &args.inputs {
-                inputs.push(parse_number(input)?);
+                let digest = parse_digest(input)?;
+                digests.extend_from_slice(&digest.values());
             }
 
-            print!("Hash varlen mode [");
+            print!("Hash varlen mode Digest");
             for (i, input) in args.inputs.iter().enumerate() {
                 if i > 0 {
                     print!(", ");
                 }
                 print!("{}", input);
             }
-            println!("]:");
+            println!("");
 
-            let result = Tip5::hash_varlen(&inputs);
+            let result = Tip5::hash_varlen(&digests);
             print!("Result: ");
-            print_hash(&result);
+            println!("Digest({})", result.to_string());
         }
     }
 

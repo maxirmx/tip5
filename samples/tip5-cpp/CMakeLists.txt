@@ -28,17 +28,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cli11)
 
-add_executable(tip5xx_sample
+add_executable(tip5
     src/main.cpp
 )
 
-set_target_properties(tip5xx_sample PROPERTIES
+set_target_properties(tip5 PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
 
-target_link_libraries(tip5xx_sample
+target_link_libraries(tip5
     PRIVATE
         tip5xx::tip5xx
         CLI11::CLI11
