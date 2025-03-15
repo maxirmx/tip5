@@ -58,9 +58,33 @@ cargo build
 ```cpp
 #include <tip5xx/tip5xx.hpp>
 
-tip5xx::Tip5 processor;
-processor.process("your input");
-auto result = processor.result();
+// Create digests
+tip5xx::BFieldElement elements1[] = {
+    tip5xx::BFieldElement::new_element(1),   // decimal
+    tip5xx::BFieldElement::new_element(2),
+    tip5xx::BFieldElement::new_element(3),
+    tip5xx::BFieldElement::new_element(4),
+    tip5xx::BFieldElement::new_element(5)
+};
+tip5xx::Digest digest1(elements1);
+
+tip5xx::BFieldElement elements2[] = {
+    tip5xx::BFieldElement::new_element(0x6), // hexadecimal
+    tip5xx::BFieldElement::new_element(0x7),
+    tip5xx::BFieldElement::new_element(0x8),
+    tip5xx::BFieldElement::new_element(0x9),
+    tip5xx::BFieldElement::new_element(0xa)
+};
+tip5xx::Digest digest2(elements2);
+
+// Hash pair of digests
+auto result = tip5xx::Tip5::hash_pair(digest1, digest2);
+
+// Hash variable length array of digests
+std::vector<tip5xx::BFieldElement> varlen;
+varlen.insert(varlen.end(), digest1.begin(), digest1.end());
+varlen.insert(varlen.end(), digest2.begin(), digest2.end());
+auto varlen_result = tip5xx::Tip5::hash_varlen(varlen);
 ```
 
 ### Sample Applications
