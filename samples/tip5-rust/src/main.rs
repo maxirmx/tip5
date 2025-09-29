@@ -26,7 +26,7 @@
 
 use clap::{Parser, ValueEnum};
 use std::error::Error;
-use twenty_first::{math::tip5::Tip5, prelude::{Digest, BFieldElement}};
+use twenty_first::{tip5::Tip5, prelude::{Digest, BFieldElement}};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum)]
 enum Mode {
